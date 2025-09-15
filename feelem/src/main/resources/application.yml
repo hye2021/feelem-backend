@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: feelem
+
+  security:
+    oauth2:
+      client: # OAuth2 ????? ??
+        registration: # ??? ??? ?? ?? (google, kakao, naver)
+          google:
+            client-id: "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com"
+            client-secret: "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"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}" # ?? ??? ?? ? ??? url (http://localhost:8080/login/oauth2/code/google)
+            scope: # ??? ?? ?? (email, profile)
+              - email
+              - profile
+        provider: # OAuth2 ?? ??? ?? ?? (??)
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/feelem?allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 0125
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create #-> update
+    properties: # ? ??? ?????.
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect # ??? DB ??? ??
+    show-sql: true
