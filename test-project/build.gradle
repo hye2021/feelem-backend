@@ -18,8 +18,9 @@ plugins {
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
-group = 'com.example' // group: 프로젝트의 그룹명을 설정하는 속성
+group = 'com.feelem' // group: 프로젝트의 그룹명을 설정하는 속성
 version = '0.0.1-SNAPSHOT' // version: 프로젝트의 버전 (Major.Minor.Patch)
+description = 'feelem'
 
 java {
     toolchain {

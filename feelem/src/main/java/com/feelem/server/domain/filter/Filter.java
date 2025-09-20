@@ -1,19 +1,17 @@
 package com.feelem.server.domain.filter;
 
 import com.feelem.server.domain.user.User;
-import com.fasterxml.jackson.databind.JsonNode;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
-
+import org.hibernate.annotations.JdbcTypeCode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -40,7 +38,7 @@ public class Filter {
   @Column(name = "preview_url")
   private String previewUrl;
 
-  @Type(JsonType.class)
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "color_adjustments", columnDefinition = "json", nullable = false)
   private Map<String, Double> colorAdjustments;
 
@@ -56,7 +54,7 @@ public class Filter {
   @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FilterTag> filterTags = new ArrayList<>();
 
-  @OneToMany(mappedby = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FilterSticker> filterStickers = new ArrayList<>();
 
   @Builder

@@ -2,13 +2,13 @@ package com.feelem.server.domain.filter;
 
 import com.feelem.server.domain.sticker.Sticker;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,7 +28,7 @@ public class FilterSticker {
   @JoinColumn(name = "sticker_id", nullable = false)
   private Sticker sticker;
 
-  @Type(JsonType.class)
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "placement_info", columnDefinition = "json", nullable = false)
   private JsonNode placementInfo;
 
