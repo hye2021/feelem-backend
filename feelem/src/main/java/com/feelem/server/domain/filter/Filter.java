@@ -30,8 +30,6 @@ public class Filter {
   @Column(nullable = false)
   private String name;
 
-  private String description;
-
   @Column(nullable = false)
   private Integer price;
 
@@ -58,10 +56,9 @@ public class Filter {
   private List<FilterSticker> filterStickers = new ArrayList<>();
 
   @Builder
-  public Filter(User creator, String name, String description, Integer price, Boolean isPublic, Map<String, Double> colorAdjustments, String previewUrl) {
+  public Filter(User creator, String name, Integer price, Boolean isPublic, Map<String, Double> colorAdjustments, String previewUrl) {
     this.creator = creator;
     this.name = name;
-    this.description = description;
     this.price = price;
     this.isPublic = isPublic;
     this.colorAdjustments = colorAdjustments;

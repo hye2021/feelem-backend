@@ -21,13 +21,13 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/feelem?allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: 0125
+    username: admin
+    password: admin1818
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create #-> update
+      ddl-auto: update # update, crate, create-drop, validate, none
     properties: # ? ??? ?????.
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect # ??? DB ??? ??
