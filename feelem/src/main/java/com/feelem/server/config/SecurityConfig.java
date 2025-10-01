@@ -1,5 +1,8 @@
 package com.feelem.server.config;
 
+import com.feelem.server.config.auth.OAuth2LoginSuccessHandler;
+import com.feelem.server.config.jwt.JwtAuthenticationFilter;
+import com.feelem.server.config.jwt.JwtTokenProvider;
 import com.feelem.server.domain.user.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @RequiredArgsConstructor
 @Configuration
@@ -16,6 +20,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   private final CustomOAuth2UserService customOAuth2UserService;
+  private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+  private final JwtTokenProvider jwtTokenProvider;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -30,7 +36,12 @@ public class SecurityConfig {
             .userInfoEndpoint(userInfo -> userInfo
                 .userService(customOAuth2UserService) // ⬅️ 핵심: 로그인 성공 후 사용자 정보를 처리할 서비스
             )
+            .successHandler(oAuth2LoginSuccessHandler)
         );
+
+    // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
+    http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
 
     return http.build();
   }

@@ -32,3 +32,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect # ??? DB ??? ??
     show-sql: true
+
+jwt:
+  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1hbmQtc2VjdXJlLXNlY3JldC1rZXktZm9yLWp3dC0yMDI1 #Base64 Encode
