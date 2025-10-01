@@ -35,9 +35,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     log.info("OAuth2 Login Success Handler 진입");
 
     OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+    Long userId = oAuth2User.getAttribute("user_id");
 
     // 1. JWT 토큰 생성
-    TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication);
+    TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication, userId);
     log.info("Generated Access Token: {}", tokenInfo.getAccessToken());
     log.info("Generated Refresh Token: {}", tokenInfo.getRefreshToken());
 

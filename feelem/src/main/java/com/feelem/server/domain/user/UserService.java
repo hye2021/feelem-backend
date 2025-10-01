@@ -45,7 +45,7 @@ public class UserService {
     Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId().toString(), null, authorities);
 
     // 4. 새로운 Access Token과 Refresh Token을 생성한다 (Refresh Token Rotation).
-    TokenInfo newTokenInfo = jwtTokenProvider.generateToken(authentication);
+    TokenInfo newTokenInfo = jwtTokenProvider.generateToken(authentication, user.getId());
 
     // 5. DB에 새로운 Refresh Token으로 업데이트한다.
     user.updateRefreshToken(newTokenInfo.getRefreshToken());

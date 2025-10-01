@@ -31,26 +31,24 @@ public class JwtTokenProvider {
   }
 
   // 유저 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
-  public TokenInfo generateToken(Authentication authentication) {
-    // 권한 가져오기
+  public TokenInfo generateToken(Authentication authentication, Long userId) {
     String authorities = authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .collect(Collectors.joining(","));
 
     long now = (new Date()).getTime();
-
-    // Access Token 생성 (30분: 86400000)
     Date accessTokenExpiresIn = new Date(now + 60000); // 테스트용 1분
+
     String accessToken = Jwts.builder()
-        .setSubject(authentication.getName())
+        .setSubject(userId.toString()) // ⬅️ authentication.getName() 대신 우리 DB의 User ID 사용
         .claim("auth", authorities)
         .setExpiration(accessTokenExpiresIn)
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
 
-    // Refresh Token 생성 (7일: 86400000 * 7)
     String refreshToken = Jwts.builder()
-        .setExpiration(new Date(now + 86400000)) // 테스트용
+        .setSubject(userId.toString()) // ⬅️ Refresh Token에도 User ID 추가
+        .setExpiration(new Date(now + 86400000))
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
 
@@ -111,7 +109,7 @@ public class JwtTokenProvider {
     return false; // 다른 예외 발생 시에는 false 반환
   }
 
-  private Claims parseClaims(String accessToken) {
+  public Claims parseClaims(String accessToken) {
     try {
       return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
     } catch (ExpiredJwtException e) {
