@@ -39,8 +39,8 @@ public class JwtTokenProvider {
 
     long now = (new Date()).getTime();
 
-    // Access Token 생성 (30분)
-    Date accessTokenExpiresIn = new Date(now + 86400000);
+    // Access Token 생성 (30분: 86400000)
+    Date accessTokenExpiresIn = new Date(now + 60000); // 테스트용 1분
     String accessToken = Jwts.builder()
         .setSubject(authentication.getName())
         .claim("auth", authorities)
@@ -48,9 +48,9 @@ public class JwtTokenProvider {
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
 
-    // Refresh Token 생성 (7일)
+    // Refresh Token 생성 (7일: 86400000 * 7)
     String refreshToken = Jwts.builder()
-        .setExpiration(new Date(now + 86400000 * 7))
+        .setExpiration(new Date(now + 86400000)) // 테스트용
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
 
@@ -62,26 +62,34 @@ public class JwtTokenProvider {
   }
 
   // JWT 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 메서드
-  public Authentication getAuthentication(String accessToken) {
+  public Authentication getAuthentication(String accessToken) { // 이제 accessToken 보다는 token으로 이름 변경하는게 좋을듯
     // 토큰 복호화
-    Claims claims = parseClaims(accessToken);
+    Claims claims = parseClaims(accessToken); // 여기서 accessToken 변수가 refreshToken일 수도 있음
 
-    if (claims.get("auth") == null) {
-      throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+    // 💡 Refresh Token은 'auth' 클레임이 없을 수 있으므로 조건부 처리
+    Collection<? extends GrantedAuthority> authorities;
+    if (claims.get("auth") != null) { // 'auth' 클레임이 있다면 (Access Token인 경우)
+      authorities =
+          Arrays.stream(claims.get("auth").toString().split(","))
+              .map(SimpleGrantedAuthority::new)
+              .collect(Collectors.toList());
+    } else { // 'auth' 클레임이 없다면 (Refresh Token인 경우)
+      log.warn("토큰에 'auth' 클레임이 없습니다. Refresh Token으로 간주하고 subject만 사용합니다.");
+      // 기본 권한을 부여하거나, DB에서 사용자 권한을 조회하는 로직을 추가할 수 있습니다.
+      // 여기서는 일단 비어있는 권한 리스트를 사용합니다.
+      authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_USER")); // 예시: 기본 권한 부여
+      // 혹은 비어있는 리스트: new ArrayList<>();
     }
 
-    // 클레임에서 권한 정보 가져오기
-    Collection<? extends GrantedAuthority> authorities =
-        Arrays.stream(claims.get("auth").toString().split(","))
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
 
     // UserDetails 객체를 만들어서 Authentication 리턴
     // 여기서 UserDetails는 Spring Security에서 사용하는 사용자 정보 객체
     // 우리는 OAuth2User를 사용하므로, 이를 UserDetails처럼 활용
     OAuth2User principal = new CustomOAuth2User(claims.getSubject(), authorities);
 
-    return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+    // 💡 SecurityContextHolder에 저장될 Authentication 객체는 `principal`, `credentials`, `authorities`를 가집니다.
+    // Refresh Token의 경우 credentials는 필요없을 수 있습니다.
+    return new UsernamePasswordAuthenticationToken(principal, "", authorities); // credentials는 빈 문자열로 둬도 무방
   }
 
   // 토큰 정보를 검증하는 메서드
@@ -91,14 +99,16 @@ public class JwtTokenProvider {
       return true;
     } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
       log.info("Invalid JWT Token", e);
+      // 이 경우들은 false를 반환하여 일반적인 유효하지 않은 토큰으로 처리
     } catch (ExpiredJwtException e) {
       log.info("Expired JWT Token", e);
+      throw e; // ⬅️ 여기가 핵심! 만료 예외는 다시 던져서 상위에서 catch하도록
     } catch (UnsupportedJwtException e) {
       log.info("Unsupported JWT Token", e);
     } catch (IllegalArgumentException e) {
       log.info("JWT claims string is empty.", e);
     }
-    return false;
+    return false; // 다른 예외 발생 시에는 false 반환
   }
 
   private Claims parseClaims(String accessToken) {

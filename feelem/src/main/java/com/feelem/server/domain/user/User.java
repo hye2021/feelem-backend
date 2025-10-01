@@ -36,6 +36,9 @@ public class User {
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  @Column(name = "refresh_token")
+  private String refreshToken;
+
   @Builder
   public User(String nickname, String provider, String providerId, Role role) {
     this.nickname = nickname;
@@ -52,5 +55,9 @@ public class User {
 
   public String getRoleKey() {
     return this.role.getKey();
+  }
+
+  public void updateRefreshToken(String refreshToken) {
+    this.refreshToken = refreshToken;
   }
 }
