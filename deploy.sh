@@ -3,7 +3,7 @@
 # --- 1. 변수 설정 ---
 EC2_HOST="13.124.105.243"
 EC2_USER="ubuntu"
-SSH_KEY_PATH="C:/Users/seram/OneDrive/문서(OneDrive)/2025-2학기/캡디2/my-ec2-key.pem"
+SSH_KEY_PATH="C:/Users/seram/OneDrive/문서(OneDrive)/2025-2학기/캡디2/main.pem"
 REMOTE_APP_DIR="/home/${EC2_USER}/ppt-backend"
 GIT_REPO_URL="git@github.com:hye2021/ppt-backend.git"
 GIT_BRANCH="main"
