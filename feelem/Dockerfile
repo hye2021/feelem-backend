@@ -1,7 +1,8 @@
 # Dockerfile (ppt-backend/feelem/Dockerfile)
 
 # --- 1단계: 빌더 이미지 (애플리케이션 빌드용) ---
-FROM openjdk:17-alpine
+# JDK를 포함하는 안정적인 Alpine 기반 이미지 사용 (빌드에 필요)
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app # 컨테이너 내 작업 디렉토리 설정
 
 # Gradle Wrapper와 설정 파일, 소스 코드를 복사
@@ -16,7 +17,8 @@ COPY src ./src
 RUN chmod +x ./gradlew && ./gradlew bootJar
 
 # --- 2단계: 런타임 이미지 (애플리케이션 실행용) ---
-FROM openjdk:17-jre-alpine
+# JRE만 포함하는 경량 Alpine 기반 이미지 사용 (실행에 필요)
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # 빌더 단계에서 생성된 JAR 파일을 복사
