@@ -42,11 +42,7 @@ jobs:
 
       # 2. Docker 이미지 빌드 (GitHub Actions Runner에서)
       - name: Build Docker Image
-        run: |
-          docker build \
-            --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \ # Dockerfile 경로
-            --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
-            ${{ env.SPRING_BOOT_PROJECT_PATH }} # <-- Docker 빌드 컨텍스트 (./feelem)
+        run: docker build --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.SPRING_BOOT_PROJECT_PATH }}
 
       # 3. 빌드된 Docker 이미지를 .tar 파일로 저장 (github.workspace에 저장)
       - name: Save Docker Image to Tar
