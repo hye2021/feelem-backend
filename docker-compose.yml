@@ -1,0 +1,38 @@
+# docker-compose.yml (ppt-backend/docker-compose.yml)
+version: '3.8'
+
+services:
+  feelem-app: # Spring Boot 백엔드 서비스 정의 (컨테이너 이름도 feelem으로 통일)
+    build:
+      context: ./feelem # <--- ppt-backend 기준 하위 feelem 디렉토리
+      dockerfile: Dockerfile
+    container_name: feelem-spring-boot # 컨테이너 이름 지정
+    ports:
+      - "8080:8080" # EC2의 8080번 포트를 컨테이너의 8080 포트로 직접 매핑
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # 미래의 AI 서버 접근 URL (현재는 사용되지 않을 수 있음)
+      PYTHON_AI_RECO_SERVER_URL: http://feelem-ai-reco:8000 
+      # DB 연결 정보 등 application-prod.yml에서 읽는 환경 변수들을 여기에 추가
+    volumes:
+      - spring_boot_logs:/app/logs # Spring Boot 로그를 호스트 볼륨에 저장
+    restart: always # 컨테이너 종료 또는 Docker 재시작 시 항상 자동 재시작
+
+  # --- 미래에 추가될 Python AI 서버 서비스 (지금은 주석 처리) ---
+  # feelem-ai-reco:
+  #   build:
+  #     context: ./feel_em_ai_reco_server # 이 경로는 AI 서버 실제 경로로 변경
+  #     dockerfile: Dockerfile
+  #   container_name: feelem-ai-reco
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     CHROMA_PATH: /app/chromadb_data 
+  #   volumes:
+  #     - chroma_data:/app/chromadb_data 
+  #   restart: always
+
+# Docker 볼륨 정의
+volumes:
+  spring_boot_logs:
+  chroma_data:
