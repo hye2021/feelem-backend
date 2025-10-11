@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   feelem-app:
-    image: feelem-springboot-app:latest # ⬅️ 'build' 대신 'image' 사용
+    image: feelem-springboot-app:latest
     container_name: feelem-spring-boot
     ports:
       - "80:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # ... (DB 등 다른 환경 변수) ...
+      # ... (DB 등 다른 환경 변수 추가 가능) ...
     volumes:
       - spring_boot_logs:/app/logs
     restart: always
