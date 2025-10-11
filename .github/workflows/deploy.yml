@@ -65,10 +65,7 @@ jobs:
           ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-          rsync -avz --debug=all \
-            ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
-            ${{ github.workspace }}/docker-compose.yml \ # <-- 리포지토리 루트의 docker-compose.yml 전송
-            ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
+          rsync -avz --debug=all ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar ${{ github.workspace }}/docker-compose.yml ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
 
       # 6. EC2에서 Docker 이미지 로드 및 컨테이너 실행
       - name: Run Docker Compose on EC2 via SSH
