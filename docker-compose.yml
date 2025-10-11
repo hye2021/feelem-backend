@@ -8,7 +8,6 @@ services:
       - "80:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # DB 등 다른 환경 변수 추가 가능
     volumes:
       - spring_boot_logs:/app/logs
     restart: always

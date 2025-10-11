@@ -10,15 +10,9 @@ on:
       - '.github/workflows/deploy.yml'
 
 env:
-  PROJECT_NAME: feelem-app
   SPRING_BOOT_PROJECT_PATH: ./feelem
   DOCKER_IMAGE_NAME: feelem-springboot-app
   DOCKER_IMAGE_TAG: latest
-
-  EC2_HOST: ${{ secrets.EC2_HOST }}
-  EC2_USER: ubuntu
-  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-  
   REMOTE_APP_DIR: /home/ubuntu/ppt-backend
 
 jobs:
@@ -29,64 +23,79 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. JAR 빌드
+      # 1) JAR 빌드
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
+
       - name: Build with Gradle
         run: |
           cd ${{ env.SPRING_BOOT_PROJECT_PATH }}
           chmod +x ./gradlew
           ./gradlew bootJar
 
-      # 2. Docker 이미지 빌드 (JAR 포함)
-      - name: Build Docker Image
-        run: docker build \
-              --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \
-              --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
-              ${{ env.SPRING_BOOT_PROJECT_PATH }}
+      - name: Verify built JAR exists
+        run: |
+          ls -lh ${{ env.SPRING_BOOT_PROJECT_PATH }}/build/libs
 
-      # 3. Docker 이미지 .tar로 저장
+      # 2) Docker 이미지 빌드 (JAR 포함) — 줄바꿈 안전하게 처리
+      - name: Build Docker Image
+        run: |
+          docker build \
+            --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \
+            --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
+            ${{ env.SPRING_BOOT_PROJECT_PATH }}
+
+      # 3) Docker 이미지 .tar로 저장
       - name: Save Docker Image to Tar
-        run: docker save -o ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
+        run: |
+          docker save -o ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
             ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
-      
-      # 4. SSH Agent
+
+      # 4) SSH Agent 설정 (키는 secrets에서 직접 주입)
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
-          ssh-private-key: ${{ env.EC2_SSH_KEY }}
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      # 5. rsync로 이미지와 docker-compose.yml 전송
+      # 5) EC2로 파일 전송 (이미지 tar + compose 파일)
       - name: Transfer files to EC2
         run: |
-          ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
           rsync -avz \
             ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
             ${{ github.workspace }}/docker-compose.yml \
-            ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
+            ubuntu@${{ secrets.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
 
-      # 6. EC2에서 Docker 로드 + 컨테이너 실행
+      # 6) EC2에서 이미지 로드 및 컨테이너 재기동
       - name: Run Docker Compose on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             cd ${{ env.REMOTE_APP_DIR }}
-            echo "Loading new Docker image..."
+
+            echo "[1/3] Load image"
             docker load -i ${{ env.DOCKER_IMAGE_NAME }}.tar
 
-            echo "Stopping existing containers..."
-            docker-compose down
+            echo "[2/3] Stop existing containers"
+            docker-compose down || true
 
-            echo "Starting new containers..."
+            echo "[3/3] Start containers"
             docker-compose up -d
 
-            echo "Deployment complete."
+            echo
+            echo "== docker-compose ps =="
             docker-compose ps
+
+            echo
+            echo "== recent logs (tail -n 60) =="
+            docker logs --tail 60 feelem-spring-boot || true
