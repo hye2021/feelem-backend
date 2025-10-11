@@ -1,29 +1,13 @@
-# Dockerfile (ppt-backend/feelem/Dockerfile)
-
-# --- 1단계: 빌더 이미지 (애플리케이션 빌드용) ---
-# JDK를 포함하는 안정적인 Alpine 기반 이미지 사용 (빌드에 필요)
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /app # 컨테이너 내 작업 디렉토리 설정
-
-# Gradle Wrapper와 설정 파일, 소스 코드를 복사
-# 현재 디렉토리 (feelem) 기준 경로
-COPY gradlew .
-COPY gradle/ gradle/
-COPY build.gradle .
-COPY settings.gradle .
-COPY src ./src
-
-# JAR 파일 빌드
-RUN chmod +x ./gradlew && ./gradlew bootJar
-
-# --- 2단계: 런타임 이미지 (애플리케이션 실행용) ---
-# JRE만 포함하는 경량 Alpine 기반 이미지 사용 (실행에 필요)
+# --- 런타임 이미지 (미리 빌드된 JAR 파일 실행용) ---
+# Java 21 JRE가 설치된 경량 Alpine 기반 이미지 사용
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# 빌더 단계에서 생성된 JAR 파일을 복사
-# 정확한 JAR 파일명 반영: feelem-0.0.1-SNAPSHOT.jar
-COPY --from=builder /app/build/libs/feelem-0.0.1-SNAPSHOT.jar app.jar
+# GitHub Actions를 통해 이미 EC2의 TARGET_DIR로 전송된 JAR 파일을 복사
+# EC2의 /home/ubuntu/ppt-backend/feelem 디렉토리에 JAR 파일이 있다고 가정
+# Dockerfile이 /home/ubuntu/ppt-backend/feelem 에 있을 것이므로, 그냥 JAR 파일만 COPY 하면 됨
+# JAR 파일명은 feelem-0.0.1-SNAPSHOT.jar (PROJECT_PATH/build/libs/ 에서 가져온 이름과 동일해야 함)
+COPY feelem-0.0.1-SNAPSHOT.jar app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
