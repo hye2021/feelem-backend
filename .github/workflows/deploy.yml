@@ -44,10 +44,10 @@ jobs:
           chmod +x ./gradlew
           ./gradlew bootJar
       # 검증 절차
-      - name: Verify JAR exists
+      - name: Check JAR
         run: |
-          echo "Check build output:"
-          ls -lh ${{ env.SPRING_BOOT_PROJECT_PATH }}/build/libs
+          cd ${{ env.SPRING_BOOT_PROJECT_PATH }}
+          ls -l build/libs/
 
 
       # 2. Docker 이미지 빌드 (GitHub Actions Runner에서)
