@@ -15,7 +15,7 @@ env:
   # AWS EC2 접속 정보 (GitHub Secrets에서 가져옴)
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ubuntu
-  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }} # 개인키
   
   # EC2 내부 경로
   REMOTE_APP_DIR: /home/ubuntu/ppt-backend
@@ -48,22 +48,36 @@ jobs:
             --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
             ${{ env.SPRING_BOOT_PROJECT_PATH }}
 
-      # 3. 빌드된 Docker 이미지를 .tar 파일로 저장
+      # 3. 빌드된 Docker 이미지를 .tar 파일로 저장 (github.workspace에 저장)
       - name: Save Docker Image to Tar
-        run: docker save -o ${{ env.DOCKER_IMAGE_NAME }}.tar ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
-
-      # 4. .tar 파일과 docker-compose.yml 파일을 EC2로 전송
-      - name: Transfer files to EC2 via SCP
-        uses: appleboy/scp-action@v0.1.7
+        run: docker save -o ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+      
+      # --- 파일 전송 방식 변경: SSH Agent와 rsync 사용 ---
+      # 4. SSH Agent 설정 (GitHub Actions에서 SSH 키 사용 가능하게 함)
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.8.0
         with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_SSH_KEY }}
-          source: "${{ env.DOCKER_IMAGE_NAME }}.tar,docker-compose.yml" # 전송할 파일 목록
-          target: ${{ env.REMOTE_APP_DIR }}
-          strip_components: 1 # 경로 없이 파일만 전송
+          ssh-private-key: ${{ env.EC2_SSH_KEY }} # GitHub Secrets에 등록된 개인키 사용
 
-      # 5. EC2에서 Docker 이미지 로드 및 컨테이너 실행
+      # 5. rsync를 사용하여 .tar 파일과 docker-compose.yml 파일을 EC2로 전송
+      - name: Transfer files to EC2 via rsync
+        run: |
+          # EC2의 SSH host key를 자동으로 추가하여 'Are you sure...' 프롬프트 방지
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          # rsync 명령어를 사용하여 파일 전송
+          # -a: 아카이브 모드 (권한, 시간 등 보존)
+          # -v: 자세한 출력
+          # -z: 압축 전송
+          # --delete: 대상 디렉토리에 소스에 없는 파일이 있다면 삭제 (주의해서 사용)
+          rsync -avz \
+            ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
+            ${{ github.workspace }}/docker-compose.yml \
+            ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
+
+      # 6. EC2에서 Docker 이미지 로드 및 컨테이너 실행
       - name: Run Docker Compose on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
