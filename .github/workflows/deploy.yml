@@ -18,7 +18,7 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ubuntu
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-
+  
   REMOTE_APP_DIR: /home/ubuntu/ppt-backend
 
 jobs:
@@ -35,43 +35,42 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
       - name: Build with Gradle
         run: |
           cd ${{ env.SPRING_BOOT_PROJECT_PATH }}
           chmod +x ./gradlew
           ./gradlew bootJar
 
-      # 2. Docker 이미지 빌드
+      # 2. Docker 이미지 빌드 (JAR 포함)
       - name: Build Docker Image
-        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} ${{ env.SPRING_BOOT_PROJECT_PATH }}
+        run: docker build \
+              --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \
+              --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
+              ${{ env.SPRING_BOOT_PROJECT_PATH }}
 
-      # 3. Docker 이미지 저장 (.tar)
+      # 3. Docker 이미지 .tar로 저장
       - name: Save Docker Image to Tar
-        run: docker save -o ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
-
-      # 4. SSH Agent 설정
+        run: docker save -o ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+      
+      # 4. SSH Agent
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ env.EC2_SSH_KEY }}
 
-      # 5. SSH 접속 테스트 (디버깅용)
-      - name: Test SSH Connection
-        run: ssh -vvv -o StrictHostKeyChecking=no -T ${{ env.EC2_USER }}@${{ env.EC2_HOST }} || true
-
-      # 6. rsync로 EC2에 파일 전송
+      # 5. rsync로 이미지와 docker-compose.yml 전송
       - name: Transfer files to EC2
         run: |
-          mkdir -p ~/.ssh
           ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-          rsync -avz ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
-                      ${{ github.workspace }}/docker-compose.yml \
-                      ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
+          rsync -avz \
+            ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
+            ${{ github.workspace }}/docker-compose.yml \
+            ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
 
-      # 7. EC2에서 Docker Load + Compose 실행
+      # 6. EC2에서 Docker 로드 + 컨테이너 실행
       - name: Run Docker Compose on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -80,7 +79,7 @@ jobs:
           key: ${{ env.EC2_SSH_KEY }}
           script: |
             cd ${{ env.REMOTE_APP_DIR }}
-            echo "Loading Docker image..."
+            echo "Loading new Docker image..."
             docker load -i ${{ env.DOCKER_IMAGE_NAME }}.tar
 
             echo "Stopping existing containers..."
@@ -89,4 +88,5 @@ jobs:
             echo "Starting new containers..."
             docker-compose up -d
 
-            echo "Deployment complete. Check status with 'docker-compose ps'"
+            echo "Deployment complete."
+            docker-compose ps
