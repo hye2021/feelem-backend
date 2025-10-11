@@ -6,9 +6,9 @@ on:
       - main # main 브랜치에 푸시될 때마다 실행
 
 env:
-  # 프로젝트 및 파일 정보
+  # 프로젝트 및 파일 정보 (리포지토리 루트 기준)
   PROJECT_NAME: feelem-app
-  SPRING_BOOT_PROJECT_PATH: ./feelem # Spring Boot 프로젝트 경로
+  SPRING_BOOT_PROJECT_PATH: ./feelem # <-- feelem 폴더가 리포지토리 루트 바로 아래에 있음
   DOCKER_IMAGE_NAME: feelem-springboot-app
   DOCKER_IMAGE_TAG: latest
 
@@ -18,7 +18,7 @@ env:
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
   
   # EC2 내부 경로
-  REMOTE_APP_DIR: /home/ubuntu/ppt-backend
+  REMOTE_APP_DIR: /home/ubuntu/ppt-backend # EC2 서버의 deploy.sh가 사용하던 경로와 동일하게 설정
 
 jobs:
   build-and-deploy:
@@ -36,7 +36,7 @@ jobs:
           distribution: 'temurin'
       - name: Build with Gradle
         run: |
-          cd ${{ env.SPRING_BOOT_PROJECT_PATH }}
+          cd ${{ env.SPRING_BOOT_PROJECT_PATH }} # 리포지토리 루트에서 ./feelem으로 이동하여 빌드
           chmod +x ./gradlew
           ./gradlew bootJar
 
@@ -44,9 +44,9 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \
+            --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \ # Dockerfile 경로
             --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
-            ${{ env.SPRING_BOOT_PROJECT_PATH }}
+            ${{ env.SPRING_BOOT_PROJECT_PATH }} # <-- Docker 빌드 컨텍스트 (./feelem)
 
       # 3. 빌드된 Docker 이미지를 .tar 파일로 저장 (github.workspace에 저장)
       - name: Save Docker Image to Tar
@@ -60,23 +60,18 @@ jobs:
           ssh-private-key: ${{ env.EC2_SSH_KEY }}
 
       # 4.5. SSH 접속 테스트 (디버깅용 - 이 스텝에서 실패하면 SSH 접속 또는 키 문제)
-      # 이 스텝의 로그를 자세히 살펴보세요!
       - name: Test SSH Connection with verbose output
         run: ssh -vvv -o StrictHostKeyChecking=no -T ${{ env.EC2_USER }}@${{ env.EC2_HOST }} || true
 
       # 5. rsync를 사용하여 .tar 파일과 docker-compose.yml 파일을 EC2로 전송
       - name: Transfer files to EC2 via rsync (Debug Mode)
         run: |
-          # EC2의 SSH host key를 자동으로 추가하여 'Are you sure...' 프롬프트 방지
-          # StrictHostKeyChecking=no는 처음 접속하는 호스트에 대한 경고를 무시하고 진행하게 함 (디버그용으로 임시 사용)
           ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-          # rsync 명령어를 사용하여 파일 전송
-          # --debug=all 옵션을 추가하여 상세 로그 확인
           rsync -avz --debug=all \
             ${{ github.workspace }}/${{ env.DOCKER_IMAGE_NAME }}.tar \
-            ${{ github.workspace }}/docker-compose.yml \
+            ${{ github.workspace }}/docker-compose.yml \ # <-- 리포지토리 루트의 docker-compose.yml 전송
             ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.REMOTE_APP_DIR }}/
 
       # 6. EC2에서 Docker 이미지 로드 및 컨테이너 실행
