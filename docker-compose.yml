@@ -2,12 +2,16 @@ version: '3.8'
 
 services:
   feelem-app:
-    # Dockerfile이 feelem 서브디렉토리에 있으므로, build context를 지정하고
-    # Dockerfile 경로도 명시합니다.
-    build:
-      context: ./feelem # Dockerfile이 위치한 디렉토리
-      dockerfile: ./feelem/Dockerfile # Dockerfile 파일 경로 (현재 docker-compose.yml 기준)
-    container_name: feelem-app
+    image: feelem-springboot-app:latest # ⬅️ 'build' 대신 'image' 사용
+    container_name: feelem-spring-boot
     ports:
-      - "8080:8080"
-    restart: always # 컨테이너가 종료되면 항상 재시작
+      - "80:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # ... (DB 등 다른 환경 변수) ...
+    volumes:
+      - spring_boot_logs:/app/logs
+    restart: always
+
+volumes:
+  spring_boot_logs:

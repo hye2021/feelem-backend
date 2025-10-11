@@ -6,65 +6,80 @@ on:
       - main # main 브랜치에 푸시될 때마다 실행
 
 env:
-  PROJECT_PATH: ./feelem
-  JAR_NAME: feelem-0.0.1-SNAPSHOT.jar
-  EC2_HOST: 13.124.105.243
+  # 프로젝트 및 파일 정보
+  PROJECT_NAME: feelem-app
+  SPRING_BOOT_PROJECT_PATH: ./feelem # Spring Boot 프로젝트 경로
+  DOCKER_IMAGE_NAME: feelem-springboot-app
+  DOCKER_IMAGE_TAG: latest
+
+  # AWS EC2 접속 정보 (GitHub Secrets에서 가져옴)
+  EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ubuntu
-  TARGET_DIR: /home/ubuntu/ppt-backend/feelem # EC2 내 백엔드 프로젝트 루트 디렉토리
-  DOCKER_COMPOSE_DIR: /home/ubuntu/ppt-backend # docker-compose.yml이 있는 디렉토리
+  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+  
+  # EC2 내부 경로
+  REMOTE_APP_DIR: /home/ubuntu/ppt-backend
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # GitHub Actions 가상 환경
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 1. Spring Boot JAR 파일 빌드 (GitHub Actions Runner에서)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x ${{ env.PROJECT_PATH }}/gradlew
-
       - name: Build with Gradle
         run: |
-          cd ${{ env.PROJECT_PATH }}
+          cd ${{ env.SPRING_BOOT_PROJECT_PATH }}
+          chmod +x ./gradlew
           ./gradlew bootJar
-        # 빌드된 JAR 파일은 ${{ env.PROJECT_PATH }}/build/libs/ 에 생성됩니다.
 
-      - name: Get JAR file path
-        id: get_jar_path
+      # 2. Docker 이미지 빌드 (GitHub Actions Runner에서)
+      - name: Build Docker Image
         run: |
-          JAR_FILE_PATH=$(find ${{ env.PROJECT_PATH }}/build/libs -name "*.jar" -print -quit)
-          echo "JAR_FILE_PATH=${JAR_FILE_PATH}" >> $GITHUB_ENV
-          echo "Built JAR file: $JAR_FILE_PATH"
+          docker build \
+            --file ${{ env.SPRING_BOOT_PROJECT_PATH }}/Dockerfile \
+            --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} \
+            ${{ env.SPRING_BOOT_PROJECT_PATH }}
 
-      # 1. JAR 파일 전송 (SCP)
-      - name: Transfer JAR to EC2 via SCP
-        uses: appleboy/scp-action@v0.1.7 # 파일 전송 전용 액션
+      # 3. 빌드된 Docker 이미지를 .tar 파일로 저장
+      - name: Save Docker Image to Tar
+        run: docker save -o ${{ env.DOCKER_IMAGE_NAME }}.tar ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+
+      # 4. .tar 파일과 docker-compose.yml 파일을 EC2로 전송
+      - name: Transfer files to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: ${{ env.JAR_FILE_PATH }}
-          target: ${{ env.TARGET_DIR }}
-          strip_components: 3 # build/libs/feelem-0.0.1-SNAPSHOT.jar -> feelem-0.0.1-SNAPSHOT.jar
-          # 이 액션에서는 command/script/exec 사용 안 함
+          key: ${{ env.EC2_SSH_KEY }}
+          source: "${{ env.DOCKER_IMAGE_NAME }}.tar,docker-compose.yml" # 전송할 파일 목록
+          target: ${{ env.REMOTE_APP_DIR }}
+          strip_components: 1 # 경로 없이 파일만 전송
 
-      # 2. EC2에서 Docker 명령 실행 (SSH)
+      # 5. EC2에서 Docker 이미지 로드 및 컨테이너 실행
       - name: Run Docker Compose on EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.0 # SSH 명령 실행 전용 액션
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: | # ssh-action에서는 'script' 인풋이 올바릅니다.
-            cd ${{ env.DOCKER_COMPOSE_DIR }}
-            docker-compose down # 기존 컨테이너 중지 및 제거
-            docker-compose up -d # 새로운 JAR 파일로 컨테이너 실행 (빌드 없이)
-            docker-compose ps # 확인
-            echo "Deployment complete on EC2."
+          key: ${{ env.EC2_SSH_KEY }}
+          script: |
+            cd ${{ env.REMOTE_APP_DIR }}
+            
+            echo "Loading new Docker image..."
+            docker load -i ${{ env.DOCKER_IMAGE_NAME }}.tar
+
+            echo "Stopping existing containers..."
+            docker-compose down
+
+            echo "Starting new containers..."
+            docker-compose up -d
+            
+            echo "Deployment complete. Check status with 'docker-compose ps'"
