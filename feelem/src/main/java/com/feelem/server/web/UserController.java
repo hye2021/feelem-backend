@@ -20,7 +20,7 @@ public class UserController {
   private final UserService userService;
 
   @Operation(summary = "특정 사용자 프로필 조회")
-  @GetMapping("/{userId}/profile")
+  @GetMapping("/{userId}")
   public ResponseEntity<UserDto.ProfileResponse> getUserProfile(@PathVariable Long userId) {
     UserDto.ProfileResponse response = new UserDto.ProfileResponse(userService.findById(userId));
     return ResponseEntity.ok(response);
