@@ -57,6 +57,11 @@ dependencies {
 
     // commons-lang3 보안 취약점 해결을 위해 최신 버전 명시
     implementation 'org.apache.commons:commons-lang3:3.14.0'
+
+    // --- AWS ---
+    implementation 'software.amazon.awssdk:s3:2.25.23'
+    implementation 'software.amazon.awssdk:auth:2.25.23'
+    implementation 'software.amazon.awssdk:core:2.25.23'
 }
 
 
