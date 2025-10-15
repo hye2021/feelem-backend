@@ -1,27 +1,24 @@
 package com.feelem.server.config;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class S3Config {
 
+  @Value("${cloud.aws.region.static}")
+  private String region;
+
   @Bean
-  public S3Client s3Client() {
-    return S3Client.builder()
-        .region(Region.AP_NORTHEAST_2) // 서울 리전
-        .credentialsProvider(
-            StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(
-                    System.getenv("AWS_ACCESS_KEY_ID"),
-                    System.getenv("AWS_SECRET_ACCESS_KEY")
-                )
-            )
-        )
+  public AmazonS3 amazonS3() {
+    // EC2 IAM Role 자격증명 자동 사용
+    return AmazonS3ClientBuilder.standard()
+        .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+        .withRegion(region)
         .build();
   }
 }

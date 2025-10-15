@@ -1,6 +1,8 @@
 spring:
   application:
     name: feelem
+  profiles:
+    active: prod
 
   security:
     oauth2:
@@ -39,4 +41,8 @@ jwt:
 cloud:
   aws:
     s3:
-      bucket: feelem-bucket-images
+      bucket: feelem-s3-bucket
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
