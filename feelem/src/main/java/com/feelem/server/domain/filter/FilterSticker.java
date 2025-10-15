@@ -1,14 +1,10 @@
 package com.feelem.server.domain.filter;
 
 import com.feelem.server.domain.sticker.Sticker;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,20 +24,19 @@ public class FilterSticker {
   @JoinColumn(name = "sticker_id", nullable = false)
   private Sticker sticker;
 
-  // 좌표 지정 방법
-  @Enumerated(EnumType.STRING)
-  @Column(name = "placement_type", nullable = false)
-  private PlacementType placementType;
+  // 절대: 절대 스케일
+  // 얼굴 추적: 얼굴 크기에 대한 비율
+  @Column(name = "scale", nullable = false)
+  private Double scale = 1d;
 
-  // FACE_ML_KIT: { "anchor": "FOREHEAD", "offsetX": 0.0, "offsetY": -0.3, "relativeScale": 1.2 }
-  @JdbcTypeCode(SqlTypes.JSON)
-  @Column(name = "placement_info", columnDefinition = "json", nullable = false)
-  private JsonNode placementInfo;
+  // 절대: 절대 좌표
+  // 얼굴 추적: 기준점으로부터의 오프셋
+  @Column(name = "x", nullable = true)
+  private Double x;
+  @Column(name = "y", nullable = true)
+  private Double y;
 
-  @Builder
-  public FilterSticker(Filter filter, Sticker sticker, JsonNode placementInfo) {
-    this.filter = filter;
-    this.sticker = sticker;
-    this.placementInfo = placementInfo;
-  }
+  // 얼굴 추적: 기준점 (이마, 왼쪽 눈, 오른쪽 눈)
+  @Column(name = "anchor", nullable = true)
+  private String anchor;
 }

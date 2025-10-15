@@ -1,44 +1,71 @@
 package com.feelem.server.global.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.feelem.server.domain.filter.Filter;
+import com.feelem.server.domain.filter.PlacementType;
+import lombok.*;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 public class FilterDto {
+
   @Getter
+  @Setter
   @NoArgsConstructor
-  @Schema(description = "필터 생성을 위한 요청 데이터 dto")
+  @AllArgsConstructor
+  @Builder
   public static class CreateRequest {
-    @Schema(description = "필터 이름", example = "My Cool Filter")
     private String name;
-
-    @Schema(description = "필터 가격", example = "100")
     private Integer price;
-
-    @Schema(description = "필터 공개 여부", example = "true")
-    private Boolean isPublic;
-
-    @Schema(description = "13가지 색감 조절 값")
+    private String originalImageUrl;
+    private String editedImageUrl;
+    private Integer aspectX;
+    private Integer aspectY;
     private Map<String, Double> colorAdjustments;
-
-    @Schema(description = "필터에 달린 태그 목록 (최대5개)", example = "[\"vintage\", \"bright\"]")
     private List<String> tags;
+    private List<StickerPlacement> stickers;
 
-    @Schema(description = "사용된 스티커와 배치 정보 목록")
-    private List<StickerPlacementRequest> stickers;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StickerPlacement {
+      private Long stickerId;
+      private PlacementType placementType; // ABSOLUTE, FACE_TRACKING
+      private Double scale;
+      private Double x;
+      private Double y;
+      private String anchor; // FACE_TRACKING일 때만 사용
+    }
   }
 
   @Getter
-  @NoArgsConstructor
-  @Schema(description = "스티커 배치 정보를 담는 객체")
-  public static class StickerPlacementRequest {
-    @Schema(description = "재사용할 스티커의 ID", example = "1")
-    private Long stickerId;
+  public static class Response {
+    private final Long id;
+    private final String name;
+    private final Integer price;
+    private final String originalImageUrl;
+    private final String editedImageUrl;
+    private final Map<String, Double> colorAdjustments;
+    private final Boolean isDeleted;
+    private final Long saveCount;
+    private final Long useCount;
 
-    @Schema(description = "스티커 배치 정보 JSON", example = "{\"position\": {\"x\": 0.5, \"y\": 0.5}, \"scale\": 1.0, \"rotation\": 0.0}")
-    private JsonNode placementInfo;
+    private final List<String> tags;
+    private final List<CreateRequest.StickerPlacement> stickers;
+
+    public Response(Filter filter, List<String> tags, List<CreateRequest.StickerPlacement> stickers) {
+      this.id = filter.getId();
+      this.name = filter.getName();
+      this.price = filter.getPrice();
+      this.originalImageUrl = filter.getOriginalImageUrl();
+      this.editedImageUrl = filter.getEditedImageUrl();
+      this.colorAdjustments = filter.getColorAdjustments();
+      this.isDeleted = filter.getIsDeleted();
+      this.saveCount = filter.getSaveCount();
+      this.useCount = filter.getUseCount();
+      this.tags = tags;
+      this.stickers = stickers;
+    }
   }
 }
