@@ -1,5 +1,6 @@
 package com.feelem.server.domain.user;
 
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -7,44 +8,54 @@ import java.util.Map;
 
 @Getter
 public class OAuthAttributes {
-  private final Map<String, Object> attributes;
-  private final String nameAttributeKey;
-  private final String nickname;
-  private final String provider;
-  private final String providerId;
+  private Map<String, Object> attributes;
+  private String nameAttributeKey;
+  private String provider;
+  private String providerId;
+  private String email;
+  private String nickname;
 
   @Builder
-  public OAuthAttributes(Map<String, Object> attributes, String nameAttributeKey, String nickname, String provider, String providerId) {
+  public OAuthAttributes(Map<String, Object> attributes, String nameAttributeKey,
+      String provider, String providerId,
+      String email, String nickname) {
     this.attributes = attributes;
     this.nameAttributeKey = nameAttributeKey;
-    this.nickname = nickname;
     this.provider = provider;
     this.providerId = providerId;
+    this.email = email;
+    this.nickname = nickname;
   }
 
-  // 플랫폼별로 다른 사용자 정보 형식을 통일
   public static OAuthAttributes of(String registrationId, String userNameAttributeName, Map<String, Object> attributes) {
-    // (나중에 Kakao, Naver 등 추가 시 여기에 분기 로직 추가)
-    return ofGoogle(userNameAttributeName, attributes);
+    if ("google".equals(registrationId)) {
+      return ofGoogle(userNameAttributeName, attributes);
+    }
+    // TODO: naver, kakao 등 추가
+    throw new IllegalArgumentException("Unsupported provider: " + registrationId);
   }
 
   private static OAuthAttributes ofGoogle(String userNameAttributeName, Map<String, Object> attributes) {
+    String email = (String) attributes.get("email");
+    String name = (String) attributes.get("name");
+    String sub = (String) attributes.get("sub"); // Google에서 유저 고유 ID
     return OAuthAttributes.builder()
-        .nickname((String) attributes.get("name"))
+        .email(email)
+        .nickname(name)
         .provider("google")
-        .providerId((String) attributes.get("sub"))
+        .providerId(sub)
         .attributes(attributes)
         .nameAttributeKey(userNameAttributeName)
         .build();
   }
 
-  // User 엔티티 생성
   public User toEntity() {
     return User.builder()
+        .email(email != null ? email : UUID.randomUUID() + "@tempuser.com") // ✅ null 방지
         .nickname(nickname)
         .provider(provider)
         .providerId(providerId)
-        .role(Role.USER) // 기본 권한
+        .role(Role.USER)
         .build();
   }
 }

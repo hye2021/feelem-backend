@@ -7,6 +7,7 @@ import com.feelem.server.domain.user.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
@@ -23,27 +24,46 @@ public class SecurityConfig {
   private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
   private final JwtTokenProvider jwtTokenProvider;
 
+  /**
+   * ✅ LOCAL 환경 (로컬 테스트용)
+   * - 인증 완전 우회
+   * - 로그인 없이 Postman 등에서 테스트 가능
+   */
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  @Profile("local")
+  public SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .anyRequest().permitAll() // ✅ 모든 요청 허용
+        );
+    return http.build();
+  }
+
+  /**
+   * ✅ PROD 환경 (운영용)
+   * - OAuth2 + JWT 인증 활성화
+   */
+  @Bean
+  @Profile("prod")
+  public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(CsrfConfigurer::disable)
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT 사용 예정
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT 사용
         .authorizeHttpRequests(authz -> authz
             .requestMatchers("/api/v1/auth/reissue").permitAll()
-            .requestMatchers("/api/v1/uploads/**").permitAll() // todo: test
-            .requestMatchers("/api/v1/**").permitAll() //todo: test -> authenticated() // /api/v1/** 경로는 인증 필요
-            .anyRequest().permitAll() // 그 외 경로는 모두 허용 (로그인 페이지 등)
+            .requestMatchers("/api/v1/**").authenticated() // ✅ prod에서는 인증 필요
+            .anyRequest().permitAll()
         )
         .oauth2Login(oauth2 -> oauth2
             .userInfoEndpoint(userInfo -> userInfo
-                .userService(customOAuth2UserService) // ⬅️ 핵심: 로그인 성공 후 사용자 정보를 처리할 서비스
+                .userService(customOAuth2UserService)
             )
             .successHandler(oAuth2LoginSuccessHandler)
         );
 
-    // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
+    // JWT 필터 등록
     http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
-
 
     return http.build();
   }

@@ -6,6 +6,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Collection;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,6 +21,8 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
+  @Value("${spring.profiles.active:local}")
+  private String activeProfile;
 
   @Transactional(readOnly = true)
   public User findById(Long userId) {
@@ -30,14 +33,20 @@ public class UserService {
   public User getCurrentUser() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new IllegalStateException("인증되지 않은 사용자입니다.");
+    // ✅ 테스트 환경에서는 무조건 id=2 유저 사용
+    if ("local".equals(activeProfile)) {
+      return userRepository.findById(2L)
+          .orElseThrow(() -> new RuntimeException("테스트용 유저(id=1)가 존재하지 않습니다."));
+    }
+
+    // ✅ OAuth 로그인한 유저는 SecurityContext에서 email 기반으로 가져오기
+    if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+      throw new RuntimeException("로그인이 필요합니다.");
     }
 
     String email = authentication.getName();
-
     return userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. email=" + email));
+        .orElseThrow(() -> new RuntimeException("User not found"));
   }
 
   @Transactional

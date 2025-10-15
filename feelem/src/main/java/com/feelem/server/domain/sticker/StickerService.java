@@ -11,7 +11,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class StickerService {
 
   private final StickerRepository stickerRepository;
@@ -26,6 +26,8 @@ public class StickerService {
         .imageUrl(request.getImageUrl())
         .stickerType(request.getType())
         .build();
+
+    System.out.println("✅ Sticker inserted ID: " + sticker.getId());
 
     return stickerRepository.save(sticker);
   }

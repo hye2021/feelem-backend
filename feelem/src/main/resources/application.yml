@@ -2,7 +2,7 @@ spring:
   application:
     name: feelem
   profiles:
-    active: prod
+    active: prod # local, dev, prod
 
   security:
     oauth2:
@@ -11,7 +11,7 @@ spring:
           google:
             client-id: "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com"
             client-secret: "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"
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}" # ?? ??? ?? ? ??? url (http://localhost:8080/login/oauth2/code/google)
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope: # ??? ?? ?? (email, profile)
               - email
               - profile

@@ -19,9 +19,11 @@ public class StickerController {
   private final StickerService stickerService;
 
   @PostMapping
-  public ResponseEntity<Sticker> createSticker(@RequestBody StickerDto.CreateRequest request) {
+  public ResponseEntity<StickerDto.Response> createSticker(@RequestBody StickerDto.CreateRequest request) {
+    System.out.print("✅ Creating sticker with imageUrl: " + request.getImageUrl() + "\n");
     Sticker sticker = stickerService.createSticker(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(sticker);
+    StickerDto.Response response = new StickerDto.Response(sticker);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @GetMapping
