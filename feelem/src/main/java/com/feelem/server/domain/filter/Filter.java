@@ -1,5 +1,6 @@
 package com.feelem.server.domain.filter;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.feelem.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -25,6 +26,7 @@ public class Filter {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "creator_id", nullable = false)
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private User creator;
 
   @Column(nullable = false)
@@ -104,4 +106,5 @@ public class Filter {
   public void increaseSaveCount() { this.saveCount++; }
   public void increaseUseCount()  { this.useCount++; }
   public void softDelete()        { this.isDeleted = true; }
+  public void updatePrice(Integer price) { this.price = price; }
 }

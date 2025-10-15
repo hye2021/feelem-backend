@@ -3,6 +3,7 @@ package com.feelem.server.domain.filter;
 import com.feelem.server.domain.sticker.Sticker;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +12,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "filter_stickers")
 public class FilterSticker {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -29,6 +29,10 @@ public class FilterSticker {
   @Column(name = "scale", nullable = false)
   private Double scale = 1d;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "placement_type", nullable = false)
+  private PlacementType placementType;
+
   // 절대: 절대 좌표
   // 얼굴 추적: 기준점으로부터의 오프셋
   @Column(name = "x", nullable = true)
@@ -39,4 +43,15 @@ public class FilterSticker {
   // 얼굴 추적: 기준점 (이마, 왼쪽 눈, 오른쪽 눈)
   @Column(name = "anchor", nullable = true)
   private String anchor;
+
+  @Builder
+  public FilterSticker(Filter filter, Sticker sticker, PlacementType placementType, Double scale, Double x, Double y, String anchor) {
+    this.filter = filter;
+    this.sticker = sticker;
+    this.placementType = placementType;
+    this.scale = scale;
+    this.x = x;
+    this.y = y;
+    this.anchor = anchor;
+  }
 }

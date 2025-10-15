@@ -3,79 +3,111 @@ package com.feelem.server.domain.filter;
 import com.feelem.server.domain.sticker.Sticker;
 import com.feelem.server.domain.sticker.StickerRepository;
 import com.feelem.server.domain.user.User;
-import com.feelem.server.domain.user.UserRepository;
+import com.feelem.server.domain.user.UserService;
 import com.feelem.server.global.dto.FilterDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class FilterService {
 
   private final FilterRepository filterRepository;
-  private final TagRepository tagRepository;
   private final StickerRepository stickerRepository;
+  private final TagRepository tagRepository;
   private final FilterTagRepository filterTagRepository;
   private final FilterStickerRepository filterStickerRepository;
-  private final UserRepository userRepository;
+  private final UserService userService;
 
-  /**
-   * 새로운 필터를 생성하는 메서드
-   * @param requestDto 필터 생성에 필요한 데이터
-   * @param userId 필터를 생성하는 사용자의 ID
-   * @return 생성된 필터의 ID
-   */
-  @Transactional
-  public Long createFilter(FilterDto.CreateRequest requestDto, Long userId) {
-    // 1. 필터를 생성할 사용자를 조회합니다. 없으면 예외를 발생시킵니다.
-    User creator = userRepository.findById(userId)
-        .orElseThrow(() -> new EntityNotFoundException("요청한 사용자를 찾을 수 없습니다: " + userId));
+  public Filter createFilter(FilterDto.CreateRequest request) {
+    User creator = userService.getCurrentUser();
 
-    // todo
-    // 2. DTO로부터 Filter 엔티티를 생성합니다.
-    Filter newFilter = Filter.builder()
+    Filter filter = Filter.builder()
         .creator(creator)
-        .name(requestDto.getName())
-        .price(requestDto.getPrice())
-        .colorAdjustments(requestDto.getColorAdjustments())
+        .name(request.getName())
+        .price(request.getPrice())
+        .colorAdjustments(request.getColorAdjustments())
+        .originalImageUrl(request.getOriginalImageUrl())
+        .editedImageUrl(request.getEditedImageUrl())
+        .aspectX(request.getAspectX())
+        .aspectY(request.getAspectY())
         .build();
 
-    // 3. Filter를 먼저 저장하여 ID를 부여받습니다.
-    filterRepository.save(newFilter);
+    Filter savedFilter = filterRepository.save(filter);
 
-    // 4. 태그 목록을 처리합니다. (null이 아닐 경우에만)
-    List<String> tags = requestDto.getTags();
-    if (tags != null && !tags.isEmpty()) {
-      tags.forEach(tagName -> {
-        // DB에 이미 태그가 있으면 가져오고, 없으면 새로 생성해서 저장합니다.
+    // 2. 태그 등록
+    if (request.getTags() != null && !request.getTags().isEmpty()) {
+      for (String tagName : request.getTags()) {
         Tag tag = tagRepository.findByName(tagName)
-            .orElseGet(() -> tagRepository.save(Tag.builder().name(tagName).build()));
-
-        // filter와 tag의 관계를 조인 테이블에 저장합니다.
-        filterTagRepository.save(FilterTag.builder().filter(newFilter).tag(tag).build());
-      });
+            .orElseGet(() -> tagRepository.save(new Tag(tagName)));
+        filterTagRepository.save(new FilterTag(savedFilter, tag));
+      }
     }
 
-    // 5. 스티커 목록을 처리합니다. (null이 아닐 경우에만)
-    List<FilterDto.StickerPlacementRequest> stickers = requestDto.getStickers();
-    if (stickers != null && !stickers.isEmpty()) {
-      stickers.forEach(stickerRequest -> {
-        // 재사용할 스티커를 DB에서 조회합니다. 없으면 예외를 발생시킵니다.
-        Sticker sticker = stickerRepository.findById(stickerRequest.getStickerId())
-            .orElseThrow(() -> new EntityNotFoundException("요청한 스티커를 찾을 수 없습니다: " + stickerRequest.getStickerId()));
+    // 3. 스티커 배치 등록
+    if (request.getStickers() != null && !request.getStickers().isEmpty()) {
+      for (FilterDto.CreateRequest.StickerPlacement sp : request.getStickers()) {
+        Sticker sticker = stickerRepository.findById(sp.getStickerId())
+            .orElseThrow(() -> new EntityNotFoundException("Sticker not found: " + sp.getStickerId()));
 
-        // filter와 sticker의 관계 및 배치 정보를 조인 테이블에 저장합니다.
-        filterStickerRepository.save(FilterSticker.builder()
-            .filter(newFilter)
+        FilterSticker filterSticker = FilterSticker.builder()
+            .filter(savedFilter)
             .sticker(sticker)
-            .placementInfo(stickerRequest.getPlacementInfo())
-            .build());
-      });
+            .placementType(sp.getPlacementType())
+            .scale(sp.getScale())
+            .x(sp.getX())
+            .y(sp.getY())
+            .anchor(sp.getAnchor())
+            .build();
+
+        filterStickerRepository.save(filterSticker);
+      }
     }
 
-    return newFilter.getId();
+    return savedFilter;
+  }
+
+  @Transactional(readOnly = true)
+  public FilterDto.Response getFilter(Long filterId) {
+    Filter filter = filterRepository.findByIdAndIsDeletedFalse(filterId)
+        .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
+
+    // 태그 리스트
+    List<String> tags = filter.getFilterTags().stream()
+        .map(ft -> ft.getTag().getName())
+        .collect(Collectors.toList());
+
+    // 스티커 배치 리스트
+    List<FilterDto.CreateRequest.StickerPlacement> stickers = filter.getFilterStickers().stream()
+        .map(fs -> FilterDto.CreateRequest.StickerPlacement.builder()
+            .stickerId(fs.getSticker().getId())
+            .placementType(fs.getPlacementType())
+            .scale(fs.getScale())
+            .x(fs.getX())
+            .y(fs.getY())
+            .anchor(fs.getAnchor())
+            .build())
+        .collect(Collectors.toList());
+
+    return new FilterDto.Response(filter, tags, stickers);
+  }
+
+  public Filter updatePrice(Long filterId, Integer newPrice) {
+    Filter filter = filterRepository.findById(filterId)
+        .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
+    filter.updatePrice(newPrice);
+    return filterRepository.save(filter);
+  }
+
+  public void deleteFilter(Long filterId) {
+    Filter filter = filterRepository.findById(filterId)
+        .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
+    filter.softDelete();
   }
 }

@@ -40,6 +40,14 @@ public class FilterDto {
   }
 
   @Getter
+  @Setter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class UpdatePriceRequest {
+    private Integer price;
+  }
+
+  @Getter
   public static class Response {
     private final Long id;
     private final String name;
