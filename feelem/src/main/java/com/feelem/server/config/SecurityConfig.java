@@ -31,7 +31,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(authz -> authz
             .requestMatchers("/api/v1/auth/reissue").permitAll()
             .requestMatchers("/api/v1/uploads/**").permitAll() // todo: test
-            .requestMatchers("/api/v1/**").authenticated() // /api/v1/** 경로는 인증 필요
+            .requestMatchers("/api/v1/**").permitAll() //todo: test -> authenticated() // /api/v1/** 경로는 인증 필요
             .anyRequest().permitAll() // 그 외 경로는 모두 허용 (로그인 페이지 등)
         )
         .oauth2Login(oauth2 -> oauth2

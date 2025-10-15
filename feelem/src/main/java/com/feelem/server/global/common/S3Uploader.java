@@ -23,6 +23,14 @@ public class S3Uploader {
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
+  // 개발 환경용
+  public String upload(File file, String dirName) throws IOException {
+    String fileName = dirName + "/" + UUID.randomUUID() + "-" + file.getName();
+    amazonS3.putObject(new PutObjectRequest(bucket, fileName, file));
+    return amazonS3.getUrl(bucket, fileName).toString();
+  }
+
+  // 운영 환경용
   public String upload(MultipartFile multipartFile, String dirName) throws IOException {
     File uploadFile = convert(multipartFile)
         .orElseThrow(() -> new IllegalArgumentException("파일 변환 실패"));
