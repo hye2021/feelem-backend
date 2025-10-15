@@ -30,6 +30,7 @@ public class SecurityConfig {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT 사용 예정
         .authorizeHttpRequests(authz -> authz
             .requestMatchers("/api/v1/auth/reissue").permitAll()
+            .requestMatchers("/api/v1/uploads/**").permitAll() // todo: test
             .requestMatchers("/api/v1/**").authenticated() // /api/v1/** 경로는 인증 필요
             .anyRequest().permitAll() // 그 외 경로는 모두 허용 (로그인 페이지 등)
         )

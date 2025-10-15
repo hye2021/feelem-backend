@@ -28,8 +28,7 @@ public class S3Uploader {
         .orElseThrow(() -> new IllegalArgumentException("파일 변환 실패"));
 
     String key = dirName + "/" + UUID.randomUUID() + "-" + uploadFile.getName();
-    amazonS3.putObject(new PutObjectRequest(bucket, key, uploadFile)
-        .withCannedAcl(CannedAccessControlList.PublicRead));
+    amazonS3.putObject(new PutObjectRequest(bucket, key, uploadFile));
     uploadFile.delete();
 
     return amazonS3.getUrl(bucket, key).toString();
