@@ -21,6 +21,9 @@ public class User {
   @Column(nullable = false)
   private String nickname;
 
+  @Column(nullable = false, unique = true)
+  private String email;
+
   // OAuth2 제공자 (google, kakao 등)
   @Column(nullable = false)
   private String provider;
@@ -40,7 +43,8 @@ public class User {
   private String refreshToken;
 
   @Builder
-  public User(String nickname, String provider, String providerId, Role role) {
+  public User(String nickname, String provider, String providerId, Role role, String email) {
+    this.email = email;
     this.nickname = nickname;
     this.provider = provider;
     this.providerId = providerId;

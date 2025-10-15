@@ -3,6 +3,7 @@ package com.feelem.server.domain.sticker;
 import com.feelem.server.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,7 +14,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "stickers")
 public class Sticker {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -35,6 +35,7 @@ public class Sticker {
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  @Builder
   public Sticker(User creator, StickerType stickerType, String imageUrl) {
     this.creator = creator;
     this.stickerType = stickerType;
