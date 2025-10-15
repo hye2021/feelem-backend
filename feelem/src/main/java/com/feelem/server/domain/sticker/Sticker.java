@@ -22,11 +22,12 @@ public class Sticker {
   @JoinColumn(name = "creator_id", nullable = false)
   private User creator;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "sticker_type", nullable = false)
-  private String stickerType;
+  private StickerType stickerType;
 
   @Column(name = "sticker_image_url", nullable = false)
-  private String stickerImageUrl;
+  private String imageUrl;
 
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted = false;
@@ -34,5 +35,15 @@ public class Sticker {
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
-  // ai_prompt 등 ERD에 있는 다른 필드들도 필요에 따라 추가
+  public Sticker(User creator, StickerType stickerType, String imageUrl) {
+    this.creator = creator;
+    this.stickerType = stickerType;
+    this.imageUrl = imageUrl;
+    this.isDeleted = false;
+    this.createdAt = LocalDateTime.now();
+  }
+
+  public void markAsDeleted() {
+    this.isDeleted = true;
+  }
 }

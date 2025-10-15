@@ -34,12 +34,12 @@ public class FilterService {
     User creator = userRepository.findById(userId)
         .orElseThrow(() -> new EntityNotFoundException("요청한 사용자를 찾을 수 없습니다: " + userId));
 
+    // todo
     // 2. DTO로부터 Filter 엔티티를 생성합니다.
     Filter newFilter = Filter.builder()
         .creator(creator)
         .name(requestDto.getName())
         .price(requestDto.getPrice())
-        .isPublic(requestDto.getIsPublic())
         .colorAdjustments(requestDto.getColorAdjustments())
         .build();
 

@@ -28,6 +28,12 @@ public class FilterSticker {
   @JoinColumn(name = "sticker_id", nullable = false)
   private Sticker sticker;
 
+  // 좌표 지정 방법
+  @Enumerated(EnumType.STRING)
+  @Column(name = "placement_type", nullable = false)
+  private PlacementType placementType;
+
+  // FACE_ML_KIT: { "anchor": "FOREHEAD", "offsetX": 0.0, "offsetY": -0.3, "relativeScale": 1.2 }
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "placement_info", columnDefinition = "json", nullable = false)
   private JsonNode placementInfo;
