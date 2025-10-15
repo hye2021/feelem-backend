@@ -29,7 +29,7 @@ public class FileCleanupScheduler {
 
     for (UploadedFile file : unused) {
       try {
-        uploadService.deleteFile(file.getFileUrl());
+        uploadService.delete(file.getFileUrl());
         log.info("Deleted unused file: {}", file.getFileUrl());
       } catch (Exception e) {
         log.warn("Failed to delete file: {}", file.getFileUrl(), e);
