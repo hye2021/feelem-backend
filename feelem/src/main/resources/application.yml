@@ -2,7 +2,7 @@ spring:
   application:
     name: feelem
   profiles:
-    active: local # local, dev, prod
+    active: prod # local, dev, prod
 
   security:
     oauth2:
