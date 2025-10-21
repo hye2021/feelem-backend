@@ -33,6 +33,7 @@ public class FilterDto {
       private Long stickerId;
       private PlacementType placementType; // ABSOLUTE, FACE_TRACKING
       private Double scale;
+      private Double rotation;
       private Double x;
       private Double y;
       private String anchor; // FACE_TRACKING일 때만 사용

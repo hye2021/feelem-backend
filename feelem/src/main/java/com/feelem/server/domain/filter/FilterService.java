@@ -63,6 +63,7 @@ public class FilterService {
             .scale(sp.getScale())
             .x(sp.getX())
             .y(sp.getY())
+            .rotation(sp.getRotation())
             .anchor(sp.getAnchor())
             .build();
 

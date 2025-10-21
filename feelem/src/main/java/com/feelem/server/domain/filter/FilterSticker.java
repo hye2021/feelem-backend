@@ -39,17 +39,20 @@ public class FilterSticker {
   private Double x;
   @Column(name = "y", nullable = true)
   private Double y;
+  @Column(name = "rotation")
+  private Double rotation = 0d;
 
   // 얼굴 추적: 기준점 (이마, 왼쪽 눈, 오른쪽 눈)
   @Column(name = "anchor", nullable = true)
   private String anchor;
 
   @Builder
-  public FilterSticker(Filter filter, Sticker sticker, PlacementType placementType, Double scale, Double x, Double y, String anchor) {
+  public FilterSticker(Filter filter, Sticker sticker, PlacementType placementType, Double scale, Double rotation, Double x, Double y, String anchor) {
     this.filter = filter;
     this.sticker = sticker;
     this.placementType = placementType;
     this.scale = scale;
+    this.rotation = rotation;
     this.x = x;
     this.y = y;
     this.anchor = anchor;
