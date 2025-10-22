@@ -1,5 +1,7 @@
 package com.feelem.server.domain.filter;
 
+import com.feelem.server.client.RecommendClient;
+import com.feelem.server.client.RecommendDto.IndexRequestDto;
 import com.feelem.server.domain.sticker.Sticker;
 import com.feelem.server.domain.sticker.StickerRepository;
 import com.feelem.server.domain.user.User;
@@ -24,6 +26,7 @@ public class FilterService {
   private final FilterTagRepository filterTagRepository;
   private final FilterStickerRepository filterStickerRepository;
   private final UserService userService;
+  private final RecommendClient recommendClient;
 
   public Filter createFilter(FilterDto.CreateRequest request) {
     User creator = userService.getCurrentUser();
@@ -70,6 +73,13 @@ public class FilterService {
         filterStickerRepository.save(filterSticker);
       }
     }
+
+    // 1. (인덱싱) AI 서버에 Vector DB 저장을 요청
+    IndexRequestDto indexRequest = new IndexRequestDto(savedFilter.getId(), savedFilter.getEditedImageUrl());
+    recommendClient.indexFilter(indexRequest);
+
+    // 2. (캐시) AI 서버에 메타데이터 캐시 생성을 요청
+    recommendClient.refreshCache(savedFilter.getId());
 
     return savedFilter;
   }

@@ -31,6 +31,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE' // AWS SDK 통합
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.0' // 버전은 Spring Boot 버전에 맞게 조절
 
     // --- Database ---
     runtimeOnly 'com.mysql:mysql-connector-j'
