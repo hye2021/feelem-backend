@@ -2,7 +2,7 @@ spring:
   application:
     name: feelem
   profiles:
-    active: local # local, dev, prod
+    active: prod # local, dev, prod
 
   security:
     oauth2:
@@ -67,6 +67,6 @@ cloud:
     stack:
       auto: false
 
-feelem:
-  recommend-service:
-    url: localhost:8081
+recommend:
+  server:
+    url: http://172.31.44.15

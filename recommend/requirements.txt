@@ -6,6 +6,7 @@ pydantic
 sentence-transformers
 chromadb
 torch # (sentence-transformers가 의존하므로 유지)
+redis # Re-Rank 결과 캐싱용
 
 # DB 및 유틸리티
 mysql-connector-python # cache.py에서 사용
