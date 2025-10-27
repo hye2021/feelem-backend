@@ -2,37 +2,49 @@ spring:
   application:
     name: feelem
   profiles:
-    active: prod # local, dev, prod
+    active: local # local, dev, prod
 
   security:
     oauth2:
-      client: # OAuth2 ????? ??
-        registration: # ??? ??? ?? ?? (google, kakao, naver)
+      client:
+        registration:
           google:
             client-id: "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com"
             client-secret: "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"
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
-            scope: # ??? ?? ?? (email, profile)
+            scope: #
               - email
               - profile
-        provider: # OAuth2 ?? ??? ?? ?? (??)
+        provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/feelem?allowPublicKeyRetrieval=true&useSSL=false
+#    username: root
+#    password: 0125abc
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+
   datasource:
-    url: jdbc:mysql://localhost:3306/feelem?allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: 0125abc
+    url: jdbc:mysql://localhost:3307/feelem?allowPublicKeyRetrieval=true&useSSL=false
+    username: feelem
+    password: WonderDogs1001
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+#  datasource:
+#    url: jdbc:mysql://feelem-mysql.cbmgucewogo4.ap-northeast-2.rds.amazonaws.com:3306/feelem?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul
+#    username: feelem
+#    password: WonderDogs1001
+#    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: update # update, crate, create-drop, validate, none
-    properties: # ? ??? ?????.
+    properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect # ??? DB ??? ??
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
 
   cloud:
@@ -55,8 +67,6 @@ cloud:
     stack:
       auto: false
 
-recommend-server:
-  url: http://localhost:8000 # Docker Compose 서비스 이름
-
-generate-server:
-    url: http://localhost:8001
+feelem:
+  recommend-service:
+    url: localhost:8081
