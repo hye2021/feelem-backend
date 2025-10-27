@@ -1,5 +1,7 @@
 package com.feelem.server.domain.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.feelem.server.domain.review.Review;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -7,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -24,15 +28,13 @@ public class User {
   @Column(nullable = false, unique = true)
   private String email;
 
-  // OAuth2 제공자 (google, kakao 등)
   @Column(nullable = false)
   private String provider;
 
-  // OAuth2 제공자로부터 받은 고유 ID
   @Column(name = "provider_id", nullable = false)
   private String providerId;
 
-  @Enumerated(EnumType.STRING) // Enum 이름을 DB에 문자열로 저장
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Role role;
 
@@ -41,6 +43,20 @@ public class User {
 
   @Column(name = "refresh_token")
   private String refreshToken;
+
+  /* ✅ 연관관계 추가 */
+
+  // 유저가 등록한 소셜 계정들
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
+  private List<Social> socials = new ArrayList<>();
+
+  // 유저가 작성한 리뷰들
+  @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnoreProperties({"reviewer", "hibernateLazyInitializer", "handler"})
+  private List<Review> reviews = new ArrayList<>();
+
+  /* 생성자 및 메서드 */
 
   @Builder
   public User(String nickname, String provider, String providerId, Role role, String email) {
@@ -51,7 +67,6 @@ public class User {
     this.role = role;
   }
 
-  // OAuth2 사용자 정보 업데이트를 위한 메서드
   public User update(String nickname) {
     this.nickname = nickname;
     return this;
