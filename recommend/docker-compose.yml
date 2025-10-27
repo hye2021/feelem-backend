@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  # 1. ChromaDB 서버
+  chromadb:
+    image: chromadb/chroma
+    ports:
+      - "8000:8000" # .env의 CHROMA_PORT와 일치
+    volumes:
+      - chroma-data:/chroma/.chroma/index # 데이터 유지를 위한 볼륨
+
+  # 2. Redis 서버
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379" # .env의 REDIS_PORT와 일치
+    volumes:
+      - redis-data:/data # 데이터 유지를 위한 볼륨
+
+volumes:
+  chroma-data:
+  redis-data:

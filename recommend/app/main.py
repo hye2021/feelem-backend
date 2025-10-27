@@ -48,3 +48,22 @@ async def search_filters_by_text(
 async def health_check():
     """헬스 체크 엔드포인트 (EC2 타겟 그룹용)"""
     return {"status": "ok"}
+
+
+@app.post(
+    "/admin/index", response_model=IndexResponse, status_code=status.HTTP_201_CREATED
+)
+async def admin_index_filter(data: IndexFilterRequest, request: Request):
+    """
+    (내부용) 새 필터 또는 수정된 필터를 인덱싱합니다.
+    Spring Boot 서버가 필터 생성/수정 시 호출합니다.
+    """
+    try:
+        await index_single_filter(request, data)
+        return IndexResponse(status="indexed", filter_id=data.filter_id)
+    except ValueError as e:
+        # 이미지 처리 실패 등
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Internal server error during indexing: {e}")
+        raise HTTPException(status_code=500, detail="Error during indexing process.")
