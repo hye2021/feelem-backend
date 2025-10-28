@@ -10,3 +10,4 @@ xformers
 onnxruntime
 python-multipart
 Pillow
+boto3

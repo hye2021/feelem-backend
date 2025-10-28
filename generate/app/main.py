@@ -1,68 +1,112 @@
+import os
+import uuid
+import boto3
+import torch
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from transformers import MarianMTModel, MarianTokenizer
 from diffusers import StableDiffusionPipeline
+from transformers import MarianMTModel, MarianTokenizer
 from rembg import remove
 from PIL import Image
-import torch, uuid, os
 
-app = FastAPI()
+# ----------------------------
+# ✅ 환경 변수 및 설정
+# ----------------------------
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+S3_BUCKET = "feelem-s3-bucket"  # ✅ 본인 버킷명으로 변경
+REGION_NAME = "ap-northeast-2"
 
-# ------------------------------
-# 1. 번역 모델 로드
-# ------------------------------
-model_name = "Helsinki-NLP/opus-mt-ko-en"
-tokenizer = MarianTokenizer.from_pretrained(model_name)
-translator = MarianMTModel.from_pretrained(model_name)
+# ----------------------------
+# ✅ S3 클라이언트 초기화
+# ----------------------------
+try:
+    s3_client = boto3.client("s3", region_name=REGION_NAME)
+    print("✅ S3 클라이언트 초기화 완료")
+except Exception as e:
+    print(f"❌ S3 클라이언트 초기화 실패: {e}")
+
+# ----------------------------
+# ✅ 번역 모델 (Ko → En)
+# ----------------------------
+print("🌀 Loading translation model...")
+translator_model = "Helsinki-NLP/opus-mt-ko-en"
+tokenizer = MarianTokenizer.from_pretrained(translator_model)
+model = MarianMTModel.from_pretrained(translator_model)
 
 
 def translate_korean_to_english(text: str) -> str:
     inputs = tokenizer(text, return_tensors="pt", padding=True)
-    translated = translator.generate(**inputs)
+    translated = model.generate(**inputs)
     return tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
 
 
-# ------------------------------
-# 2. Stable Diffusion 파이프라인 로드
-# ------------------------------
+# ----------------------------
+# ✅ Stable Diffusion 파이프라인
+# ----------------------------
+print("🧠 Loading Stable Diffusion model... (first time only)")
 pipe = StableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",
     torch_dtype=torch.float16,
-    revision="fp16",
-    use_auth_token=os.getenv("HUGGINGFACE_TOKEN"),
-).to("cuda")
-
+    use_auth_token=HUGGINGFACE_TOKEN,
+).to("cuda" if torch.cuda.is_available() else "cpu")
 pipe.enable_attention_slicing()
 
+# ----------------------------
+# ✅ FastAPI 서버 초기화
+# ----------------------------
+app = FastAPI()
 
-# ------------------------------
-# 3. 요청 모델
-# ------------------------------
+
 class PromptRequest(BaseModel):
     prompt_ko: str
 
 
-SAVE_DIR = "generated_images"
-os.makedirs(SAVE_DIR, exist_ok=True)
-
-
-# ------------------------------
-# 4. API
-# ------------------------------
 @app.get("/")
 async def root():
-    return {"status": "ok"}
+    return {"status": "ok", "device": "cuda" if torch.cuda.is_available() else "cpu"}
 
 
+# ----------------------------
+# ✅ 이미지 생성 & 업로드
+# ----------------------------
 @app.post("/gensticker")
 async def generate_sticker(request: PromptRequest):
-    prompt_en = translate_korean_to_english(request.prompt_ko)
-    image = pipe(prompt_en).images[0]
-    image_no_bg = remove(image)
+    try:
+        prompt_ko = request.prompt_ko
+        print(f"🎨 프롬프트 수신: {prompt_ko}")
 
-    file_id = str(uuid.uuid4())
-    output_path = os.path.join(SAVE_DIR, f"{file_id}.png")
-    image_no_bg.save(output_path)
+        # 1️⃣ 번역
+        prompt_en = translate_korean_to_english(prompt_ko)
+        print(f"🔤 영어 번역: {prompt_en}")
 
-    return FileResponse(output_path, media_type="image/png", filename="sticker.png")
+        # 2️⃣ 이미지 생성
+        image = pipe(prompt_en).images[0]
+
+        # 3️⃣ 배경 제거
+        image_no_bg = remove(image)
+
+        # 4️⃣ 임시 파일로 저장
+        tmp_path = f"/tmp/{uuid.uuid4()}.png"
+        image_no_bg.save(tmp_path, "PNG")
+
+        # 5️⃣ S3 업로드 (ACL 제거 버전)
+        s3_key = f"stickers/{os.path.basename(tmp_path)}"
+        s3_client.upload_file(
+            tmp_path,
+            S3_BUCKET,
+            s3_key,
+            ExtraArgs={"ContentType": "image/png"},  # ✅ ACL 제거됨
+        )
+
+        # 6️⃣ S3 URL 생성
+        image_url = f"https://{S3_BUCKET}.s3.{REGION_NAME}.amazonaws.com/{s3_key}"
+        print(f"✅ 업로드 완료: {image_url}")
+
+        return JSONResponse(
+            content={"prompt_ko": prompt_ko, "prompt_en": prompt_en, "url": image_url}
+        )
+
+    except Exception as e:
+        print(f"❌ 오류 발생: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
