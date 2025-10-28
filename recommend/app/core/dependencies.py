@@ -1,4 +1,3 @@
-# 앱 실행 시 모델과 클라이언트를 한 번만 로드하여 app.state에 저장
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sentence_transformers import SentenceTransformer
@@ -9,25 +8,28 @@ from app.core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 앱 시작 시
-    print("Loading models and clients...")
-    app.state.clip_model = SentenceTransformer(settings.CLIP_MODEL_NAME)
+    # CPU 전용 로딩 (EC2)
+    print("Loading models and clients (CPU-only, SentenceTransformer)...")
 
+    # 멀티링구얼 CLIP (텍스트/이미지 겸용)
+    model_id = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
+    app.state.clip_model = SentenceTransformer(model_id, device="cpu")
+
+    # ChromaDB
     app.state.chroma_client = chromadb.HttpClient(
         host=settings.CHROMA_HOST, port=settings.CHROMA_PORT
     )
-    # 컬렉션 가져오기 (없으면 생성 - 실제로는 ETL 스크립트가 생성해야 함)
     app.state.chroma_collection = app.state.chroma_client.get_or_create_collection(
         name=settings.CHROMA_COLLECTION
     )
 
+    # Redis
     app.state.redis_client = await redis.Redis(
         host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True
     )
-    print("Startup complete.")
 
+    print("Startup complete.")
     yield
 
-    # 앱 종료 시
     await app.state.redis_client.close()
     print("Shutdown complete.")

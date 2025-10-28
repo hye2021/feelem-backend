@@ -1,8 +1,8 @@
 import requests
 import numpy as np
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from io import BytesIO
-from typing import List, Dict
+from typing import List
 from fastapi import Request, HTTPException
 from app.core.config import settings
 from app.services.ranking import re_rank_candidates
@@ -11,11 +11,9 @@ from fastapi.concurrency import run_in_threadpool
 from urllib.parse import urlparse
 import boto3
 import json
-import re
-
 
 # ----------------------------
-# ✅ S3 클라이언트 초기화
+# ✅ S3 클라이언트
 # ----------------------------
 if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
     print("Initializing S3 client with Access Keys (Local Test Mode)")
@@ -41,158 +39,147 @@ async def get_ranked_home_recs(
     sorted_ids = sorted(filter_ids)
     cache_key = f"recs:home:{settings.CHROMA_COLLECTION}:{':'.join(sorted_ids)}"
 
-    ranked_ids = []
-
-    # 캐시 조회
-    try:
-        cached_data = await redis.get(cache_key)
-        if cached_data:
-            return json.loads(cached_data)
-    except Exception:
-        print("⚠️ Redis connection failed, proceeding without cache.")
+    ranked_ids: List[str] = []
 
     try:
-        # 입력 필터 벡터 조회
-        input_filters = await run_in_threadpool(
-            chroma_collection.get,
-            ids=sorted_ids,
-            include=["embeddings", "metadatas"],
-        )
+        cached = await redis.get(cache_key)
+        if cached:
+            ranked_ids = json.loads(cached)
+        else:
+            inputs = await run_in_threadpool(
+                chroma_collection.get,
+                ids=sorted_ids,
+                include=["embeddings", "metadatas"],
+            )
+            if not inputs or not inputs.get("embeddings"):
+                return []
 
-        if not input_filters or not input_filters.get("embeddings"):
-            return []
+            avg_vec = np.mean(inputs["embeddings"], axis=0).tolist()
 
-        avg_vector = np.mean(input_filters["embeddings"], axis=0).tolist()
+            cands = await run_in_threadpool(
+                chroma_collection.query,
+                query_embeddings=[avg_vec],
+                n_results=settings.PRIMARY_QUERY_COUNT,
+                include=["metadatas", "distances"],
+            )
+            ranked_ids = re_rank_candidates(inputs.get("metadatas", []), cands)
 
-        candidates = await run_in_threadpool(
-            chroma_collection.query,
-            query_embeddings=[avg_vector],
-            n_results=settings.PRIMARY_QUERY_COUNT,
-            include=["metadatas", "distances"],
-        )
-
-        input_metadatas = input_filters.get("metadatas", [])
-        ranked_ids = re_rank_candidates(input_metadatas, candidates)
-
-        # 캐시 저장 (비동기)
-        if ranked_ids:
-            try:
+            if ranked_ids:
                 await redis.setex(
-                    cache_key,
-                    settings.CACHE_EXPIRATION_SECONDS,
-                    json.dumps(ranked_ids),
+                    cache_key, settings.CACHE_EXPIRATION_SECONDS, json.dumps(ranked_ids)
                 )
-            except Exception:
-                print("⚠️ Failed to cache ranked_ids to Redis.")
-
     except Exception as e:
         print(f"❌ Error during home recommendation: {e}")
         raise HTTPException(status_code=500, detail="Home recommendation failed.")
 
+    # ✅ 항상 파이썬에서 최종 페이징
     start = page * settings.PAGE_SIZE
     end = start + settings.PAGE_SIZE
     return ranked_ids[start:end]
 
 
 # ----------------------------
-# ✅ 텍스트 기반 검색
+# ✅ 텍스트 검색 (리스트 입력 + [0] 추출)
 # ----------------------------
 async def get_text_search_results(request: Request, query: str, page: int) -> List[str]:
-    clip_model = request.app.state.clip_model
+    model = request.app.state.clip_model
     chroma_collection = request.app.state.chroma_collection
     try:
-        # 1️⃣ 텍스트 임베딩
-        text_vector = await run_in_threadpool(lambda: clip_model.encode([query])[0])
-        text_vector = np.array(text_vector, dtype=np.float32).tolist()
-
-        # 2️⃣ 검색 (offset 제거)
-        results = await run_in_threadpool(
-            chroma_collection.query,
-            query_embeddings=[text_vector],
-            n_results=settings.PAGE_SIZE * (page + 1),
+        # 멀티링구얼 ST 모델: 리스트 입력 후 첫 벡터만 사용
+        text_vec = await run_in_threadpool(
+            lambda: model.encode(sentences=[query], convert_to_numpy=True)[0].tolist()
         )
 
-        if not results or not results.get("ids") or not results["ids"][0]:
+        # Chroma에는 offset 인자 없음 → 넉넉히 받아서 슬라이싱
+        results = await run_in_threadpool(
+            chroma_collection.query,
+            query_embeddings=[text_vec],
+            n_results=settings.PAGE_SIZE * (page + 1),
+        )
+        ids = results.get("ids", [[]])[0]
+        if not ids:
             return []
 
-        # 3️⃣ Python에서 직접 페이징
         start = page * settings.PAGE_SIZE
         end = start + settings.PAGE_SIZE
-        return results["ids"][0][start:end]
-
+        return ids[start:end]
     except Exception as e:
         print(f"❌ Error during text search: {e}")
         raise HTTPException(status_code=500, detail="Text search failed.")
 
 
 # ----------------------------
-# ✅ 이미지 → 벡터 변환
+# ✅ 이미지 → 벡터 (V7: Numpy 변환)
 # ----------------------------
-def _fetch_and_vectorize_sync(clip_model, image_url: str) -> List[float]:
-    """S3 또는 외부 URL에서 이미지를 받아 CLIP 벡터로 변환"""
-    image_bytes = None
-
+def _fetch_and_vectorize_sync(model, image_url: str) -> List[float]:
+    """
+    공개 S3(HTTP) 우선, 실패 시 boto3로 private S3 시도.
+    이미지(PIL)를 Numpy 배열로 변환하여 encode함.
+    """
+    img_bytes = None
     try:
-        # 1️⃣ 일반 URL 접근
-        response = requests.get(image_url, timeout=5)
-        response.raise_for_status()
-        image_bytes = response.content
+        r = requests.get(image_url, timeout=5)
+        r.raise_for_status()
+        img_bytes = r.content
     except requests.exceptions.RequestException:
-        # 2️⃣ Private S3 접근
+        # Private S3 시도
         try:
-            match = re.match(r"https?://([^/]+)/(.+)", image_url)
-            if not match:
-                raise ValueError("Invalid S3 URL format.")
-            host, path = match.groups()
-            bucket_name = host.split(".")[0]
-            object_key = path
-
-            s3_response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-            image_bytes = s3_response["Body"].read()
+            parsed = urlparse(image_url)
+            bucket = parsed.netloc.split(".")[0]
+            key = parsed.path.lstrip("/")
+            obj = s3_client.get_object(Bucket=bucket, Key=key)
+            img_bytes = obj["Body"].read()
         except Exception as s3_e:
             raise ValueError(f"Failed to fetch image: {image_url} ({s3_e})")
 
-    try:
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")
-    except UnidentifiedImageError:
-        raise ValueError(f"Invalid image format: {image_url}")
+    # Pillow 이미지 열기 + RGB 변환
+    image = Image.open(BytesIO(img_bytes)).convert("RGB")
 
-    image_vector = clip_model.encode(image).tolist()
-    return image_vector
+    # print("---!!! V7 (numpy array) IS RUNNING !!!---") # 디버깅용 로그
+
+    # ✅ V7 Fix: PIL 이미지를 Numpy 배열로 변환
+    img_array = np.asarray(image)
+
+    # Numpy 배열을 리스트로 감싸서 'sentences' 인자에 전달
+    vec_batch = model.encode(sentences=[img_array], convert_to_numpy=True)
+
+    # 2D 배치 결과에서 [0] (1D 벡터)를 추출
+    vec = vec_batch[0].tolist()
+    return vec
 
 
 # ----------------------------
-# ✅ 단일 필터 인덱싱 (Spring 호출)
+# ✅ 단일 필터 인덱싱
 # ----------------------------
 async def index_single_filter(request: Request, data: IndexFilterRequest) -> None:
-    """
-    단일 필터 정보를 받아 Chroma DB에 인덱싱(upsert)합니다.
-    """
     chroma_collection = request.app.state.chroma_collection
-    clip_model = request.app.state.clip_model
+    model = request.app.state.clip_model
 
     try:
         image_vector = await run_in_threadpool(
-            _fetch_and_vectorize_sync, clip_model, data.image_url
+            _fetch_and_vectorize_sync, model, data.image_url
         )
     except Exception as e:
-        raise ValueError(f"Failed to process image for filter_id {data.filter_id}: {e}")
+        # V7 수정으로 인해 여기서 발생하던 'subscriptable' 오류가 해결되었습니다.
+        print(f"❌ Failed to process image for filter_id {data.filter_id}: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to process image for filter_id {data.filter_id}: {e}",
+        )
 
-    # ✅ metadata 변환 (ChromaDB 호환 형태)
+    # Chroma 메타는 원시 타입만 허용 → 문자열로 직렬화
     metadata = {
         "tags": ", ".join(data.tags) if data.tags else "",
         "color_adjustments": json.dumps(data.color_adjustments),
     }
-
     if data.sticker_summary:
         metadata["sticker_summary"] = json.dumps(data.sticker_summary.model_dump())
 
-    # ✅ upsert 수행
     try:
         await run_in_threadpool(
             chroma_collection.upsert,
             ids=[data.filter_id],
-            embeddings=[image_vector],
+            embeddings=[image_vector],  # ChromaDB는 2D 리스트를 기대 [[...]]
             metadatas=[metadata],
         )
         print(f"✅ Indexed filter: {data.filter_id}")

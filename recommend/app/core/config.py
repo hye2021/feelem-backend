@@ -17,9 +17,6 @@ class Settings(BaseSettings):
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
 
-    # CLIP 모델명
-    CLIP_MODEL_NAME: str = "clip-ViT-B-32"
-
     # Re-Rank 및 페이징 설정
     PRIMARY_QUERY_COUNT: int = 200  # 1차 조회할 개수
     PAGE_SIZE: int = 20  # 페이지당 반환할 개수
