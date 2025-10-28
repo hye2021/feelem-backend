@@ -51,7 +51,11 @@ public class SecurityConfig {
         .csrf(CsrfConfigurer::disable)
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT 사용
         .authorizeHttpRequests(authz -> authz
-            .requestMatchers("/api/v1/auth/reissue").permitAll()
+            .requestMatchers(
+                "/login/**",
+                "/api/v1/auth/google",
+                "/api/v1/auth/reissue"
+            ).permitAll()
             .requestMatchers("/api/v1/**").authenticated() // ✅ prod에서는 인증 필요
             .anyRequest().permitAll()
         )
