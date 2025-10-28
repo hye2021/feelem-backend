@@ -1,4 +1,3 @@
-# app/main.py
 from fastapi import FastAPI, Request, Query, HTTPException, status
 from app.core.dependencies import lifespan
 from app.models import (
@@ -24,7 +23,7 @@ async def recommend_home_filters(
     request: Request,
     page: int = Query(0, ge=0),
 ):
-    """홈 화면 필터 추천"""
+    """홈 화면 추천"""
     ids = await get_ranked_home_recs(request, request_body.filter_ids, page)
     return RecommendResponse(recommended_ids=ids)
 
@@ -46,7 +45,7 @@ async def search_filters_by_text(
     status_code=status.HTTP_201_CREATED,
 )
 async def admin_index_filter(data: IndexFilterRequest, request: Request):
-    """Spring Boot 서버가 필터 생성/수정 시 호출"""
+    """Spring Boot → FastAPI 인덱싱 요청"""
     try:
         await index_single_filter(request, data)
         return IndexResponse(status="indexed", filter_id=data.filter_id)
@@ -59,5 +58,5 @@ async def admin_index_filter(data: IndexFilterRequest, request: Request):
 
 @app.get("/health")
 async def health_check():
-    """EC2 타겟 그룹용 헬스체크"""
+    """ELB TargetGroup Health Check"""
     return {"status": "ok"}
