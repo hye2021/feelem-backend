@@ -37,7 +37,7 @@ public class JwtTokenProvider {
         .collect(Collectors.joining(","));
 
     long now = (new Date()).getTime();
-    Date accessTokenExpiresIn = new Date(now + 60000 * 30); // 30분
+    Date accessTokenExpiresIn = new Date(now + 60000 * 3 * 24 * 60); // 3일
 
     String accessToken = Jwts.builder()
         .setSubject(userId.toString()) // ⬅️ authentication.getName() 대신 우리 DB의 User ID 사용
@@ -48,7 +48,7 @@ public class JwtTokenProvider {
 
     String refreshToken = Jwts.builder()
         .setSubject(userId.toString()) // ⬅️ Refresh Token에도 User ID 추가
-        .setExpiration(new Date(now + 86400000 * 7)) // 7일
+        .setExpiration(new Date(now + 86400000 * 7)) // 14일
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
 

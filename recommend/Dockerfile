@@ -5,8 +5,8 @@ FROM python:3.11-slim
 WORKDIR /code
 
 # 3. 환경변수 설정 (Python이 로그를 버퍼링하지 않도록 설정)
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # 4. (중요) 의존성 설치
 # requirements.txt만 먼저 복사하여 pip install을 실행합니다.
