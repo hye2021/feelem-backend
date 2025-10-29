@@ -1,4 +1,4 @@
-package com.feelem.server.web;
+package com.feelem.server.domain.upload;
 
 import com.feelem.server.domain.upload.service.UploadService;
 import lombok.RequiredArgsConstructor;
