@@ -43,10 +43,10 @@ public class StickerAIService {
 
       if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
         Map<String, Object> resBody = response.getBody();
-        String s3Url = (String) resBody.get("image_url");
+        String s3Url = (String) resBody.get("url");
 
         if (s3Url == null || s3Url.isEmpty()) {
-          throw new IOException("AI 서버 응답에 image_url 누락");
+          throw new IOException("AI 서버 응답에 이미지 url 누락");
         }
 
         // ✅ S3 URL을 DB에 저장

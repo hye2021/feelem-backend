@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Collection;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,14 +18,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class UserService {
 
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
-  @Value("${spring.profiles.active:local}")
-  private String activeProfile;
 
   @Transactional(readOnly = true)
   public User findById(Long userId) {
@@ -33,22 +33,27 @@ public class UserService {
   }
 
   public User getCurrentUser() {
+    log.info("✔️ 현재 인증된 사용자를 SecurityContext에서 조회합니다.");
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-    // ✅ 테스트 환경에서는 무조건 id=2 유저 사용
-    if ("local".equals(activeProfile)) {
-      return userRepository.findById(2L)
-          .orElseThrow(() -> new RuntimeException("테스트용 유저(id=1)가 존재하지 않습니다."));
-    }
 
     // ✅ OAuth 로그인한 유저는 SecurityContext에서 email 기반으로 가져오기
     if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
       throw new RuntimeException("로그인이 필요합니다.");
     }
 
-    String email = authentication.getName();
-    return userRepository.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("User not found"));
+    String name = authentication.getName();
+    log.info("✔️ 요청 하는 user의 authentication name: {}", name);
+
+    // ✅ 숫자인 경우 ID로 조회
+    try {
+      Long userId = Long.parseLong(name);
+      return userRepository.findById(userId)
+          .orElseThrow(() -> new RuntimeException("User not found"));
+    } catch (NumberFormatException e) {
+      // ✅ 이메일일 경우 기존 방식 유지
+      return userRepository.findByEmail(name)
+          .orElseThrow(() -> new RuntimeException("User not found"));
+    }
   }
 
   @Transactional
