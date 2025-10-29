@@ -2,6 +2,8 @@ package com.feelem.server.domain.filter.repository;
 
 import com.feelem.server.domain.filter.entity.Filter;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
@@ -15,4 +17,6 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
    */
   @Query("SELECT f FROM Filter f JOIN FETCH f.creator WHERE f.id IN :ids AND f.isDeleted = false")
   List<Filter> findFiltersWithCreatorByIdIn(@Param("ids") List<Long> ids);
+
+  Page<Filter> findAllByIsDeletedFalseOrderByCreatedAtDesc(Pageable pageable);
 }
