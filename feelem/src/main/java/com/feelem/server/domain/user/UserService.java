@@ -75,4 +75,23 @@ public class UserService {
 
     return newTokenInfo;
   }
+
+  // 닉네임 설정 혹은 변경
+  @Transactional
+  public User updateNickname(String newNickname) {
+    User currentUser = getCurrentUser();
+    Long userId = currentUser.getId();
+    User user = findById(userId);
+    user.update(newNickname);
+    return user;
+  }
+
+  // 가입된 회원인지 확인: 닉네임이 User_로 시작하는지 확인
+  @Transactional(readOnly = true)
+  public boolean isRegisteredUser() {
+    User currentUser = getCurrentUser();
+    Long userId = currentUser.getId();
+    User user = findById(userId);
+    return !user.getNickname().startsWith("User_");
+  }
 }

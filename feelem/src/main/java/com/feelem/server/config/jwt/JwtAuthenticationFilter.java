@@ -56,12 +56,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-  // Request Header에서 토큰 정보 추출
   private String resolveToken(HttpServletRequest request) {
     String bearerToken = request.getHeader("Authorization");
-    if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
-      return bearerToken.substring(7); // "Bearer " 제거
+
+    if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+      // ✅ "Bearer " 뒤에 실제 토큰이 있는지 확인
+      if (bearerToken.length() > 7) {
+        return bearerToken.substring(7);
+      } else {
+        log.warn("Authorization header exists but token is empty: '{}'", bearerToken);
+        return null;
+      }
     }
+
+    if (StringUtils.hasText(bearerToken)) {
+      log.warn("Authorization header format invalid: '{}'", bearerToken);
+    }
+
     return null;
   }
+
 }

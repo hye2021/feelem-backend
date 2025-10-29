@@ -148,6 +148,12 @@ public class FilterService {
     return new FilterDto.Response(filter, tags, stickers);
   }
 
+  @Transactional(readOnly = true)
+  public Filter findById(Long filterId) {
+    return filterRepository.findByIdAndIsDeletedFalse(filterId)
+        .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
+  }
+
   /**
    * [추가] ID 리스트로 Filter 엔티티 리스트를 효율적으로 조회합니다.
    * (N+1 문제 해결용)
