@@ -1,6 +1,5 @@
 package com.feelem.server.config;
 
-import com.feelem.server.config.auth.OAuth2LoginSuccessHandler;
 import com.feelem.server.config.jwt.JwtAuthenticationFilter;
 import com.feelem.server.config.jwt.JwtTokenProvider;
 import com.feelem.server.domain.user.service.CustomOAuth2UserService;
@@ -10,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -21,7 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private final CustomOAuth2UserService customOAuth2UserService;
-  private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
   private final JwtTokenProvider jwtTokenProvider;
 
   /**
@@ -48,19 +46,36 @@ public class SecurityConfig {
   @Profile("prod")
   public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
     http
-        .csrf(CsrfConfigurer::disable)
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT
-        .authorizeHttpRequests(authz -> authz
+        .csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
             .requestMatchers(
-                "/login/**",
-                "/api/v1/auth/google",
-                "/api/v1/auth/reissue"
+                "/auth/google",
+                "/auth/reissue",
+                "/error"
             ).permitAll()
-            .requestMatchers("/api/v1/**").authenticated()
-            .anyRequest().permitAll()
+            .anyRequest().authenticated()
         )
-        // ✅ 기존 웹용 OAuth2 로그인 완전히 비활성화
-        .oauth2Login(oauth2 -> oauth2.disable());
+        // ✅ formLogin, httpBasic, oauth2Login 완전히 비활성화
+        .formLogin(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .logout(AbstractHttpConfigurer::disable)
+        .oauth2Login(AbstractHttpConfigurer::disable)  // ✅ 이 줄이 가장 중요
+
+        // ✅ CORS 허용
+        .cors(cors -> cors.configurationSource(request -> {
+          var corsConfig = new org.springframework.web.cors.CorsConfiguration();
+          corsConfig.setAllowedOrigins(java.util.List.of(
+              "http://13.124.105.243",    // EC2
+              "http://10.0.2.2:8080",     // 에뮬레이터
+              "http://localhost:8080"     // 로컬 테스트
+          ));
+          corsConfig.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+          corsConfig.setAllowedHeaders(java.util.List.of("*"));
+          corsConfig.setExposedHeaders(java.util.List.of("Authorization"));
+          corsConfig.setAllowCredentials(true);
+          return corsConfig;
+        }));
 
     // ✅ JWT 인증 필터 등록
     http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);

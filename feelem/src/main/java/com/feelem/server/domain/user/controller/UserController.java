@@ -5,6 +5,7 @@ import com.feelem.server.domain.user.dto.UserDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @Tag(name = "사용자 API", description = "사용자 정보 조회 등 관련 API")
 @RequiredArgsConstructor
 @RestController
@@ -24,6 +26,9 @@ public class UserController {
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto.ProfileResponse> getUserProfile(@PathVariable Long userId) {
     UserDto.ProfileResponse response = new UserDto.ProfileResponse(userService.findById(userId));
+
+    log.info("✔️ 사용자 프로필이 조회되었습니다: {}", response);
+
     return ResponseEntity.ok(response);
   }
 
@@ -32,6 +37,9 @@ public class UserController {
   public ResponseEntity<Void> setOrUpdateNickname(@RequestBody Map<String, String> request) {
     String nickname = request.get("nickname");
     userService.updateNickname(nickname);
+
+    log.info("✔️ 닉네임이 설정/변경되었습니다: {}", nickname);
+
     return ResponseEntity.ok().build();
   }
 
@@ -39,6 +47,9 @@ public class UserController {
   @GetMapping("/exists")
   public ResponseEntity<Map<String, Boolean>> checkUserExists() {
     boolean exists = userService.isRegisteredUser();
+
+    log.info("✔️ 가입된 회원 여부 확인: {}", exists);
+
     return ResponseEntity.ok(Map.of("exists", exists));
   }
 

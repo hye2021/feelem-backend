@@ -4,22 +4,22 @@ spring:
   profiles:
     active: prod # local, dev, prod
 
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com"
-            client-secret: "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"
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-            scope: #
-              - email
-              - profile
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          google:
+#            client-id: "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com"
+#            client-secret: "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"
+#            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+#            scope: #
+#              - email
+#              - profile
+#        provider:
+#          google:
+#            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+#            token-uri: https://oauth2.googleapis.com/token
+#            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
 #  datasource:
 #    url: jdbc:mysql://localhost:3307/feelem?allowPublicKeyRetrieval=true&useSSL=false
