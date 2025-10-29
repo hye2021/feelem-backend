@@ -1,70 +1,96 @@
 package com.feelem.server.domain.sticker.service;
 
-import com.feelem.server.domain.upload.repository.UploadRepository;
 import com.feelem.server.domain.upload.entity.UploadedFile;
-import com.feelem.server.global.common.S3Uploader;
+import com.feelem.server.domain.upload.repository.UploadRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
-/**
- * AI 스티커 생성 및 다시 만들기 비즈니스 로직
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StickerAIService {
 
-  private final S3Uploader s3Uploader;
   private final UploadRepository uploadRepository;
+  private final RestTemplate restTemplate = new RestTemplate();
+
+  @Value("${generate.server.url}")
+  private String aiServerUrl;
 
   /**
-   * ✅ 더미 이미지를 S3에 업로드하고 UploadedFile로 저장
+   * ✅ AI 서버 연결 시 실제 생성 요청
+   * - AI 서버가 S3에 업로드 → URL만 반환
+   * - 실패 시 더미 이미지 생성
    */
-  public Map<String, Object> generateDummySticker(String prompt) throws IOException {
-    // 1️⃣ 더미 이미지 파일 읽기
-    File dummy = new File("src/main/resources/static/dummy.jpg");
-    if (!dummy.exists()) {
-      throw new FileNotFoundException("dummy.png not found in resources/static/");
+  public Map<String, Object> generateSticker(String prompt) throws IOException {
+    try {
+      log.info("🎨 AI 서버에 스티커 생성 요청: {}", prompt);
+
+      String url = aiServerUrl + "/gensticker";
+      Map<String, String> body = Map.of("prompt_ko", prompt);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+
+      ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
+
+      if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+        Map<String, Object> resBody = response.getBody();
+        String s3Url = (String) resBody.get("image_url");
+
+        if (s3Url == null || s3Url.isEmpty()) {
+          throw new IOException("AI 서버 응답에 image_url 누락");
+        }
+
+        // ✅ S3 URL을 DB에 저장
+        UploadedFile uploadedFile = new UploadedFile(s3Url);
+        uploadRepository.save(uploadedFile);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", uploadedFile.getId());
+        result.put("imageUrl", uploadedFile.getFileUrl());
+        result.put("fromAIServer", true);
+        return result;
+      }
+
+      // 실패 시 더미 처리
+      log.warn("⚠️ AI 서버 응답 오류: {}", response.getStatusCode());
+      return generateDummySticker(prompt);
+
+    } catch (Exception e) {
+      log.error("❌ AI 서버 요청 실패: {}", e.getMessage());
+      return generateDummySticker(prompt);
     }
+  }
 
-    // 2️⃣ 파일명 생성
-    String fileName = "ai-sticker-" + UUID.randomUUID() + ".png";
-
-    // 3️⃣ S3 업로드
-    String fileUrl = s3Uploader.upload(dummy, "stickers/ai");
-
-    // 4️⃣ DB 저장
-    UploadedFile uploadedFile = new UploadedFile(fileUrl);
+  /**
+   * ✅ 더미 이미지 생성
+   */
+  private Map<String, Object> generateDummySticker(String prompt) {
+    String dummyUrl = "https://feelem-s3-bucket.s3.ap-northeast-2.amazonaws.com/static/dummy.jpg";
+    UploadedFile uploadedFile = new UploadedFile(dummyUrl);
     uploadRepository.save(uploadedFile);
 
-    // 5️⃣ 응답 데이터 구성 (id + url)
     Map<String, Object> response = new HashMap<>();
     response.put("id", uploadedFile.getId());
     response.put("imageUrl", uploadedFile.getFileUrl());
-
+    response.put("dummy", true);
     return response;
   }
 
   /**
-   * ✅ 다시 만들기: 기존 업로드된 파일만 삭제
+   * ✅ 삭제 로직은 그대로 유지
    */
   public void deleteGeneratedSticker(Long id) {
-    Optional<UploadedFile> uploadedOpt = uploadRepository.findById(id);
-    if (uploadedOpt.isPresent()) {
-      UploadedFile file = uploadedOpt.get();
-
-      // S3에서 삭제
-      s3Uploader.delete(file.getFileUrl());
-
-      // DB에서도 삭제
+    uploadRepository.findById(id).ifPresent(file -> {
       uploadRepository.delete(file);
-    }
+    });
   }
 }

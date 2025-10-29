@@ -22,7 +22,7 @@ public class StickerAIController {
   public ResponseEntity<Map<String, Object>> generateAISticker(@RequestBody Map<String, String> request)
       throws IOException {
     String prompt = request.get("prompt");
-    Map<String, Object> response = stickerAIService.generateDummySticker(prompt);
+    Map<String, Object> response = stickerAIService.generateSticker(prompt);
     return ResponseEntity.ok(response);
   }
 

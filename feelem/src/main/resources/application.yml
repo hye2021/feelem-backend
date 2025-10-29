@@ -65,5 +65,9 @@ recommend:
   server:
     url: http://172.31.44.15
 
+generate:
+  server:
+    url: http://172.31.0.29
+
 server:
   port: 80
