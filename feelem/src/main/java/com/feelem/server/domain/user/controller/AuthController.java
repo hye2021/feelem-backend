@@ -31,6 +31,8 @@ public class AuthController {
   public ResponseEntity<TokenInfo> googleLogin(@RequestBody Map<String, String> body) throws Exception {
     String idToken = body.get("idToken");
     TokenInfo tokenInfo = authService.loginWithGoogle(idToken);
+    log.info("✅ 구글 로그인이 성공되었습니다. idToken: {}", idToken);
+    log.info("✅ 발급된 JWT 정보: {}", tokenInfo);
     return ResponseEntity.ok(tokenInfo);
   }
 }

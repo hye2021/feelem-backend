@@ -49,24 +49,20 @@ public class SecurityConfig {
   public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(CsrfConfigurer::disable)
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT 사용
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 대신 JWT
         .authorizeHttpRequests(authz -> authz
             .requestMatchers(
                 "/login/**",
                 "/api/v1/auth/google",
                 "/api/v1/auth/reissue"
             ).permitAll()
-            .requestMatchers("/api/v1/**").authenticated() // ✅ prod에서는 인증 필요
+            .requestMatchers("/api/v1/**").authenticated()
             .anyRequest().permitAll()
         )
-        .oauth2Login(oauth2 -> oauth2
-            .userInfoEndpoint(userInfo -> userInfo
-                .userService(customOAuth2UserService)
-            )
-            .successHandler(oAuth2LoginSuccessHandler)
-        );
+        // ✅ 기존 웹용 OAuth2 로그인 완전히 비활성화
+        .oauth2Login(oauth2 -> oauth2.disable());
 
-    // JWT 필터 등록
+    // ✅ JWT 인증 필터 등록
     http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

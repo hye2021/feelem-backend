@@ -57,6 +57,9 @@ public class StickerAIService {
         result.put("id", uploadedFile.getId());
         result.put("imageUrl", uploadedFile.getFileUrl());
         result.put("fromAIServer", true);
+
+        log.info("✅ AI 서버 스티커 생성 성공: {}", s3Url);
+
         return result;
       }
 
