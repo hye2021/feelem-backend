@@ -1,5 +1,7 @@
 package com.feelem.server.domain.user;
 
+import com.feelem.server.domain.user.entity.Role;
+import com.feelem.server.domain.user.entity.User;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;

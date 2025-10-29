@@ -1,6 +1,6 @@
 package com.feelem.server.web;
 
-import com.feelem.server.domain.upload.UploadService;
+import com.feelem.server.domain.upload.service.UploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

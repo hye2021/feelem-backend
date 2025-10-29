@@ -3,7 +3,7 @@ package com.feelem.server.config;
 import com.feelem.server.config.auth.OAuth2LoginSuccessHandler;
 import com.feelem.server.config.jwt.JwtAuthenticationFilter;
 import com.feelem.server.config.jwt.JwtTokenProvider;
-import com.feelem.server.domain.user.CustomOAuth2UserService;
+import com.feelem.server.domain.user.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

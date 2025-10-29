@@ -1,5 +1,9 @@
 package com.feelem.server.recommend;
 
+import com.feelem.server.recommend.dto.HomeRecommendRequest;
+import com.feelem.server.recommend.dto.IndexFilterRequest;
+import com.feelem.server.recommend.dto.RecommendResponse;
+import com.feelem.server.recommend.dto.SearchResponse;
 import java.util.List;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;

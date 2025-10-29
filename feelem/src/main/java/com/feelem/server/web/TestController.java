@@ -1,6 +1,6 @@
 package com.feelem.server.web;
 
-import com.feelem.server.domain.user.UserService;
+import com.feelem.server.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;

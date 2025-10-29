@@ -2,8 +2,8 @@ package com.feelem.server.config.auth;
 
 import com.feelem.server.config.jwt.JwtTokenProvider;
 import com.feelem.server.config.jwt.TokenInfo;
-import com.feelem.server.domain.user.User;
-import com.feelem.server.domain.user.UserRepository;
+import com.feelem.server.domain.user.entity.User;
+import com.feelem.server.domain.user.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
