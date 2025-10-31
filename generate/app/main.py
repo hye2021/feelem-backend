@@ -2,7 +2,7 @@ import os
 import uuid
 import boto3
 import torch
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from diffusers import StableDiffusionPipeline
@@ -42,15 +42,18 @@ def translate_korean_to_english(text: str) -> str:
 
 
 # ----------------------------
-# ✅ Stable Diffusion 파이프라인
+# ✅ Stable Diffusion v1.5 파이프라인
 # ----------------------------
-print("🧠 Loading Stable Diffusion model... (first time only)")
+print("🧠 Loading Stable Diffusion v1.5 model... (first time only)")
 pipe = StableDiffusionPipeline.from_pretrained(
-    "CompVis/stable-diffusion-v1-4",
+    "runwayml/stable-diffusion-v1-5",
     torch_dtype=torch.float16,
     use_auth_token=HUGGINGFACE_TOKEN,
 ).to("cuda" if torch.cuda.is_available() else "cpu")
+
+# ✅ g4dn(T4 GPU) 환경 메모리 최적화
 pipe.enable_attention_slicing()
+pipe.enable_vae_slicing()
 
 # ----------------------------
 # ✅ FastAPI 서버 초기화
@@ -90,13 +93,13 @@ async def generate_sticker(request: PromptRequest):
         tmp_path = f"/tmp/{uuid.uuid4()}.png"
         image_no_bg.save(tmp_path, "PNG")
 
-        # 5️⃣ S3 업로드 (ACL 제거 버전)
+        # 5️⃣ S3 업로드
         s3_key = f"stickers/{os.path.basename(tmp_path)}"
         s3_client.upload_file(
             tmp_path,
             S3_BUCKET,
             s3_key,
-            ExtraArgs={"ContentType": "image/png"},  # ✅ ACL 제거됨
+            ExtraArgs={"ContentType": "image/png"},
         )
 
         # 6️⃣ S3 URL 생성
