@@ -1,5 +1,6 @@
 package com.feelem.server.domain.sticker.service;
 
+import com.feelem.server.domain.sticker.entity.StickerType;
 import com.feelem.server.domain.sticker.repository.StickerRepository;
 import com.feelem.server.domain.sticker.entity.Sticker;
 import com.feelem.server.domain.user.entity.User;
@@ -20,13 +21,13 @@ public class StickerService {
   private final UserService userService;
 
   @Transactional
-  public Sticker createSticker(StickerDto.CreateRequest request) {
+  public Sticker createSticker(StickerType type, String imageUrl) {
     User creator = userService.getCurrentUser();
 
     Sticker sticker = Sticker.builder()
         .creator(creator)
-        .imageUrl(request.getImageUrl())
-        .stickerType(request.getType())
+        .imageUrl(imageUrl)
+        .stickerType(type)
         .build();
 
     System.out.println("✅ Sticker inserted ID: " + sticker.getId());

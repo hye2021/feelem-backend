@@ -7,13 +7,20 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 public class StickerDto {
-
   @Getter
   @Setter
   @NoArgsConstructor
   public static class CreateRequest {
-    private StickerType type;
     private String imageUrl;
+    private StickerType type;
+
+    public String getImageUrl() {
+      return imageUrl;
+    }
+
+    public StickerType getType() {
+      return type;
+    }
   }
 
   @Getter
@@ -22,10 +29,12 @@ public class StickerDto {
   public static class Response {
     private Long id;
     private String imageUrl;
+    private StickerType type;
 
     public Response(Sticker sticker) {
       this.id = sticker.getId();
       this.imageUrl = sticker.getImageUrl();
+      this.type = sticker.getStickerType();
     }
   }
 }

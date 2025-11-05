@@ -92,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
         .orElseGet(() -> {
           User newUser = User.builder()
               .email(email)
-              .nickname(nickname != null ? nickname : "User_" + providerId.substring(0, 6))
+              .nickname("User_" + providerId.substring(0, 6))
               .provider(provider)
               .providerId(providerId)
               .role(Role.USER)
