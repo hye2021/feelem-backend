@@ -1,6 +1,8 @@
 package com.feelem.server.domain.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.feelem.server.domain.bookmark.entity.Bookmark;
+import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.review.entity.Review;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -43,18 +45,6 @@ public class User {
 
   @Column(name = "refresh_token")
   private String refreshToken;
-
-  /* ✅ 연관관계 추가 */
-
-  // 유저가 등록한 소셜 계정들
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
-  private List<Social> socials = new ArrayList<>();
-
-  // 유저가 작성한 리뷰들
-  @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnoreProperties({"reviewer", "hibernateLazyInitializer", "handler"})
-  private List<Review> reviews = new ArrayList<>();
 
   /* 생성자 및 메서드 */
 

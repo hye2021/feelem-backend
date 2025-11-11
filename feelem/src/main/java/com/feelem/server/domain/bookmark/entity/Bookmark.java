@@ -38,13 +38,11 @@ public class Bookmark {
   // 북마크한 사용자
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private User user;
 
   // 북마크된 필터
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "filter_id", nullable = false)
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Filter filter;
 
   @Column(name = "created_at", nullable = false, updatable = false)

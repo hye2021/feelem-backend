@@ -24,13 +24,11 @@ public class Review {
   // 리뷰 작성자
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "reviewer_id", nullable = false)
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private User reviewer;
 
   // 리뷰 대상 필터
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "filter_id", nullable = false)
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Filter filter;
 
   // 리뷰 이미지 (S3 URL)
@@ -40,7 +38,6 @@ public class Review {
   // 유저가 선택한 소셜 계정 (선택적, null 가능)
   @ManyToOne(fetch = FetchType.LAZY, optional = true)
   @JoinColumn(name = "social_id")
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Social social;
 
   @Column(name = "created_at", nullable = false, updatable = false)
