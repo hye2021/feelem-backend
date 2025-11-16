@@ -33,7 +33,7 @@ public class FilterSearchController {
     // ✅ 새 DTO 매핑 (useCount 포함)]
     // usage: 내 구매 여부, bookmark: 내 북마크 여부
     List<FilterListResponse> dtoList = filters.stream()
-        .map(filter -> FilterListResponse.fromEntity(filter, false, false))
+        .map(filter -> FilterListResponse.from(filter, false, false))
         .toList();
 
     Page<FilterListResponse> responsePage = new PageImpl<>(

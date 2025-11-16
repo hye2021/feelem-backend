@@ -1,5 +1,7 @@
 package com.feelem.server.domain.user.service;
 
+import com.feelem.server.domain.user.entity.Point;
+import com.feelem.server.domain.user.repository.PointRepository;
 import com.feelem.server.domain.user.OAuthAttributes;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.UserRepository;
@@ -23,49 +25,63 @@ import java.util.Map;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
   private final UserRepository userRepository;
+  private final PointRepository pointRepository; // ⭐ 추가
 
   @Override
   @Transactional
   public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-    // 1. 기본 OAuth2UserService 객체 생성
-    OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
 
-    // 2. OAuth2UserRequest를 이용하여 E-mail, name 등의 사용자 정보가 담긴 OAuth2User 객체를 E-mail 받아옴
+    OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
     OAuth2User oAuth2User = delegate.loadUser(userRequest);
 
-    // 3. 현재 로그인 진행 중인 서비스를 구분 (google, naver, kakao...)
     String registrationId = userRequest.getClientRegistration().getRegistrationId();
+    String userNameAttributeName = userRequest.getClientRegistration()
+        .getProviderDetails()
+        .getUserInfoEndpoint()
+        .getUserNameAttributeName();
 
-    // 4. OAuth2 로그인 진행 시 키가 되는 필드값 (PK와 같은 의미)
-    String userNameAttributeName = userRequest.getClientRegistration().getProviderDetails()
-        .getUserInfoEndpoint().getUserNameAttributeName();
+    OAuthAttributes attributes =
+        OAuthAttributes.of(registrationId, userNameAttributeName, oAuth2User.getAttributes());
 
-    // 5. OAuth2UserService를 통해 가져온 OAuth2User의 attribute를 담을 클래스
-    OAuthAttributes attributes = OAuthAttributes.of(registrationId, userNameAttributeName, oAuth2User.getAttributes());
-
-    // 6. DB에 사용자가 있으면 업데이트, 없으면 새로 저장
     User user = saveOrUpdate(attributes);
 
-    // 7. ⬇️ 로그인 성공 후처리(SuccessHandler)에서 사용할 정보를 attributes에 담아서 반환 ⬇️
+    // 반환 attributes
     Map<String, Object> customAttributes = new HashMap<>(attributes.getAttributes());
     customAttributes.put("provider", attributes.getProvider());
     customAttributes.put("providerId", attributes.getProviderId());
-    customAttributes.put("user_id", user.getId()); // DB에 저장된 우리 시스템의 User ID
+    customAttributes.put("user_id", user.getId());
 
     return new DefaultOAuth2User(
         Collections.singleton(new SimpleGrantedAuthority(user.getRoleKey())),
-        customAttributes, // ⬅️ 수정된 attributes 맵 사용
-        attributes.getNameAttributeKey());
+        customAttributes,
+        attributes.getNameAttributeKey()
+    );
   }
 
   /**
-   * DB에 사용자가 있으면 이름을 업데이트하고, 없으면 새로 생성하여 저장합니다.
+   * DB에 사용자가 있으면 이름만 업데이트하고,
+   * 없으면 신규 User를 만들고 포인트도 생성한다.
    */
   private User saveOrUpdate(OAuthAttributes attributes) {
-    User user = userRepository.findByProviderAndProviderId(attributes.getProvider(), attributes.getProviderId())
-        .map(entity -> entity.update(attributes.getNickname())) // 이미 있으면 이름만 업데이트
-        .orElse(attributes.toEntity()); // 없으면 새로 생성
 
-    return userRepository.save(user);
+    return userRepository.findByProviderAndProviderId(
+            attributes.getProvider(),
+            attributes.getProviderId()
+        )
+        .map(entity -> {
+          // 기존 사용자 → 업데이트
+          entity.update(attributes.getNickname());
+          return entity;
+        })
+        .orElseGet(() -> {
+          // 신규 생성
+          User newUser = attributes.toEntity();
+          User savedUser = userRepository.save(newUser);
+
+          // ⭐ 신규User 생성 시 포인트 동시에 생성
+          pointRepository.save(new Point(savedUser, 0));
+
+          return savedUser;
+        });
   }
 }

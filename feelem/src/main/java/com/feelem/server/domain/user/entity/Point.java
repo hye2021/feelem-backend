@@ -28,4 +28,13 @@ public class Point {
 
   @Column(name = "amount", nullable = false)
   private Integer amount;
+
+  public Point(User user, int amount) {
+    this.user = user;
+    this.amount = amount;
+  }
+
+  public void setAmount(int amount) {
+    this.amount = amount;
+  }
 }

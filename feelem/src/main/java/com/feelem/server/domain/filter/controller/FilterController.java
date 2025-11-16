@@ -87,4 +87,67 @@ public class FilterController {
 
     return ResponseEntity.ok(filterService.getRecentFilters(pageable));
   }
+
+  // ---------------------------------------------------------
+  // 1) 현재 필터를 북마크로 설정(on/off)
+  // ---------------------------------------------------------
+  @PutMapping("/{filterId}/bookmark")
+  public ResponseEntity<Boolean> toggleBookmark(@PathVariable Long filterId) {
+
+    // 1) 북마크 상태 변경
+    filterService.toggleBookmark(filterId);
+
+    // 2) 변경 후 현재 상태 조회 (true=북마크됨, false=북마크안됨)
+    boolean result = filterService.isBookmarked(filterId);
+
+    log.info("⭐ 북마크 토글 완료: filterId={}, bookmark={}", filterId, result);
+
+    return ResponseEntity.ok(result);
+  }
+
+
+  // ---------------------------------------------------------
+  // 2) 북마크 목록 조회
+  // ---------------------------------------------------------
+  @GetMapping("/bookmarks")
+  public ResponseEntity<Page<FilterListResponse>> getBookmarks(
+      @PageableDefault(size = 20) Pageable pageable
+  ) {
+
+    Page<FilterListResponse> responses = filterService.getBookmarkedFilters(pageable);
+
+    log.info("⭐ 북마크 목록 조회 요청: page={}, size={}",
+        pageable.getPageNumber(), pageable.getPageSize());
+
+    return ResponseEntity.ok(responses);
+  }
+
+  // ---------------------------------------------------------
+  // 3) 필터 구매 or 사용
+  // ---------------------------------------------------------
+  @PostMapping("/{filterId}/usage")
+  public ResponseEntity<Void> useFilter(@PathVariable Long filterId) {
+
+    filterService.useFilter(filterId);
+
+    log.info("⭐ 필터 사용/구매 완료: filterId={}", filterId);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  // ---------------------------------------------------------
+  // 4) 구매 or 사용한 필터 목록 조회 (20개 페이징)
+  // ---------------------------------------------------------
+  @GetMapping("/usage")
+  public ResponseEntity<Page<FilterListResponse>> getUsedFilters(
+      @PageableDefault(size = 20) Pageable pageable
+  ) {
+
+    Page<FilterListResponse> responses = filterService.getUsedFilters(pageable);
+
+    log.info("⭐ 사용/구매 필터 조회: page={}, size={}",
+        pageable.getPageNumber(), pageable.getPageSize());
+
+    return ResponseEntity.ok(responses);
+  }
 }

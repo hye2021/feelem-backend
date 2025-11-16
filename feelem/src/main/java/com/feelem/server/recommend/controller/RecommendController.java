@@ -83,7 +83,7 @@ public class RecommendController {
       return longIds.stream()
           .map(filterMap::get) // ID 순서대로 Filter 객체를 찾음
           .filter(java.util.Objects::nonNull) // (혹시 삭제된 필터가 있으면 null)
-          .map(FilterListResponse::from) // 사용자 DTO로 변환
+          .map(filter -> FilterListResponse.from(filter, false, false)) // 사용자 DTO로 변환
           .collect(Collectors.toList());
     });
   }

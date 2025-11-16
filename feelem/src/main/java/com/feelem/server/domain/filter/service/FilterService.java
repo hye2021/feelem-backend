@@ -12,15 +12,20 @@ import com.feelem.server.domain.filter.repository.FilterRepository;
 import com.feelem.server.domain.filter.repository.FilterStickerRepository;
 import com.feelem.server.domain.filter.repository.FilterTagRepository;
 import com.feelem.server.domain.filter.repository.TagRepository;
+import com.feelem.server.domain.finance.entity.FilterTransaction;
+import com.feelem.server.domain.finance.entity.FilterTransactionType;
 import com.feelem.server.domain.finance.repository.FilterTransactionRepository;
 import com.feelem.server.domain.sticker.entity.Sticker;
 import com.feelem.server.domain.sticker.repository.StickerRepository;
+import com.feelem.server.domain.user.entity.Point;
 import com.feelem.server.domain.user.entity.User;
+import com.feelem.server.domain.user.repository.PointRepository;
 import com.feelem.server.domain.user.service.UserService;
 import com.feelem.server.recommend.FilterIndexedEvent;
 import com.feelem.server.recommend.dto.IndexFilterRequest;
 import com.feelem.server.recommend.dto.StickerSummary;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,6 +52,7 @@ public class FilterService {
   private final FilterTransactionRepository filterTransactionRepository;
   private final UserService userService;
   private final ApplicationEventPublisher eventPublisher;
+  private final PointRepository pointRepository;
 
   // ================================================================
   // 1) 필터 생성
@@ -196,6 +202,14 @@ public class FilterService {
     }
   }
 
+  @Transactional(readOnly = true)
+  public boolean isBookmarked(Long filterId) {
+    User user = userService.getCurrentUser();
+    Filter filter = findById(filterId);
+    return bookmarkRepository.existsByUserAndFilter(user, filter);
+  }
+
+
   @Transactional
   public void addBookmark(Long filterId) {
     User user = userService.getCurrentUser();
@@ -263,4 +277,84 @@ public class FilterService {
         .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
     filter.softDelete();
   }
+
+  // ================================================================
+  // 6) 필터 구매, 사용 기능
+  // ================================================================
+  @Transactional
+  public void useFilter(Long filterId) {
+    User user = userService.getCurrentUser();
+    Filter filter = findById(filterId);
+
+    // 이미 구매한 적 있는지 확인 (중복 방지)
+    boolean exists = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filterId);
+    if (exists) {
+      return;  // 이미 구매/사용한 필터는 다시 구매하지 않음
+    }
+
+    int price = filter.getPrice();
+
+    // 1) 무료 필터 처리
+    if (price == 0) {
+
+      FilterTransaction tx = FilterTransaction.builder()
+          .type(FilterTransactionType.FREE_USE)
+          .amount(0)                // 금액 0
+          .balance(0)               // 잔액 의미 없음 → 0
+          .buyer(user)
+          .seller(filter.getCreator())
+          .filter(filter)
+          .usedAt(LocalDateTime.now())
+          .build();
+
+      filterTransactionRepository.save(tx);
+      return;
+    }
+
+    // 2) 유료 필터 구매 처리
+
+    // 유저 포인트 조회
+    Point point = pointRepository.findByUserId(user.getId())
+        .orElseThrow(() -> new EntityNotFoundException("포인트 정보가 없습니다."));
+
+    int currentAmount = point.getAmount();
+
+    // 포인트 부족 시 예외
+    if (currentAmount < price) {
+      throw new IllegalStateException("포인트가 부족합니다.");
+    }
+
+    // 포인트 차감
+    int newBalance = currentAmount - price;
+    point.setAmount(newBalance);
+
+    // 트랜잭션 생성 (유료 구매)
+    FilterTransaction tx = FilterTransaction.builder()
+        .type(FilterTransactionType.PURCHASE)
+        .amount(price)
+        .balance(newBalance)
+        .buyer(user)
+        .seller(filter.getCreator())
+        .filter(filter)
+        .usedAt(LocalDateTime.now())
+        .build();
+
+    filterTransactionRepository.save(tx);
+  }
+
+
+
+  @Transactional(readOnly = true)
+  public Page<FilterListResponse> getUsedFilters(Pageable pageable) {
+    User user = userService.getCurrentUser();
+
+    Page<Filter> page = filterTransactionRepository.findUsedOrPurchasedFilters(user.getId(), pageable);
+
+    return page.map(filter -> {
+      boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
+      boolean usage = true; // 이미 구매/사용한 목록이므로 true
+      return FilterListResponse.from(filter, usage, bookmark);
+    });
+  }
+
 }
