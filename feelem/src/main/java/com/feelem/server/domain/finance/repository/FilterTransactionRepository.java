@@ -16,4 +16,8 @@ public interface FilterTransactionRepository extends JpaRepository<FilterTransac
 
   @Query("select ft.filter from FilterTransaction ft where ft.buyer.id = :userId")
   Page<Filter> findUsedOrPurchasedFilters(@Param("userId") Long userId, Pageable pageable);
+
+  @Query("select ft from FilterTransaction ft where ft.buyer.id = :userId order by ft.createdAt desc")
+  Page<FilterTransaction> findUsageHistory(@Param("userId") Long userId, Pageable pageable);
+
 }
