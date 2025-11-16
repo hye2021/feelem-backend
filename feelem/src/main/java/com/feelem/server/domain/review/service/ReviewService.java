@@ -10,6 +10,7 @@ import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.SocialRepository;
 import com.feelem.server.domain.user.repository.UserRepository;
 import com.feelem.server.domain.user.service.UserService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -75,5 +76,34 @@ public class ReviewService {
     PageRequest pageable = PageRequest.of(page, 20);
     return reviewRepository.findAllByFilterOrderByCreatedAtDesc(filter, pageable)
         .map(ReviewDto.Response::fromEntity);
+  }
+
+  // 리뷰 미리보기 5개
+  @Transactional(readOnly = true)
+  public List<String> getReviewPreviewUrls(Long filterId) {
+
+    Filter filter = filterRepository.findById(filterId)
+        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 필터입니다."));
+
+    return reviewRepository.findTop5ByFilterOrderByCreatedAtDesc(filter)
+        .stream()
+        .map(Review::getImageUrl)
+        .toList();
+  }
+
+  // 리뷰 삭제
+  @Transactional
+  public void deleteReview(Long reviewId) {
+
+    Review review = reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
+
+    // (선택) 본인 리뷰만 삭제하도록 보호할 수도 있음 (원하면 추가 가능)
+    // User currentUser = userService.getCurrentUser();
+    // if (!review.getReviewer().getId().equals(currentUser.getId())) {
+    //     throw new IllegalAccessException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
+    // }
+
+    reviewRepository.delete(review);
   }
 }
