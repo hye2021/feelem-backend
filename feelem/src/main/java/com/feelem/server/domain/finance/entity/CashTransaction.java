@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "cache_transactions")
-public class CacheTransaction {
+@Table(name = "cash_transactions")
+public class CashTransaction {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,16 +25,16 @@ public class CacheTransaction {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private CacheTransactionType type;
+  private CashTransactionType type;
 
-  @Column(name = "cache", nullable = false)
-  private double cache;
+  @Column(name = "cash", nullable = false)
+  private double cash;
 
   @Column(name = "point", nullable = false)
   private int point;
 
-  @Column(name = "after_point", nullable = false)
-  private int afterPoint;
+  @Column(name = "balance", nullable = false)
+  private int balance;
 
   @Column(length = 255)
   private String description;
@@ -49,18 +49,18 @@ public class CacheTransaction {
   }
 
   @Builder
-  public CacheTransaction(
+  public CashTransaction(
       User user,
-      CacheTransactionType type,
-      double cache,
+      CashTransactionType type,
+      double cash,
       int point,
       int afterPoint,
       String description) {
     this.user = user;
     this.type = type;
-    this.cache = cache;
+    this.cash = cash;
     this.point = point;
-    this.afterPoint = afterPoint;
+    this.balance= afterPoint;
     this.description = description;
     this.createdAt = LocalDateTime.now();
   }

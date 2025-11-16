@@ -34,6 +34,9 @@ public class FilterTransaction {
   @Column(name = "amount", nullable = false)
   private int amount;
 
+  @Column(name = "balance", nullable = false)
+  private int balance;
+
   // 필터를 구매하거나 사용한 유저
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "buyer_id", nullable = false)
@@ -59,6 +62,7 @@ public class FilterTransaction {
   public FilterTransaction(
       FilterTransactionType type,
       int amount,
+      int balance,
       User buyer,
       User seller,
       Filter filter,
@@ -66,6 +70,7 @@ public class FilterTransaction {
   ) {
     this.type = type;
     this.amount = amount;
+    this.balance = balance;
     this.buyer = buyer;
     this.seller = seller;
     this.filter = filter;
