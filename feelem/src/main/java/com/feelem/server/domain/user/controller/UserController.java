@@ -79,4 +79,11 @@ public class UserController {
     return ResponseEntity.ok(response);
   }
 
+  // 소셜 아이디 조회
+  @GetMapping("/social")
+  public ResponseEntity<Map<String, String>> getSocialIds() {
+    Map<String, String> result = userService.getSocialIds();
+    return ResponseEntity.ok(result);
+  }
+
 }

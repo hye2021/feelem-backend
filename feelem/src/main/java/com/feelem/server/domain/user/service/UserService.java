@@ -5,12 +5,15 @@ import com.feelem.server.config.jwt.TokenInfo;
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.user.dto.UserMypageResponse;
 import com.feelem.server.domain.user.entity.Point;
+import com.feelem.server.domain.user.entity.Social;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.PointRepository;
+import com.feelem.server.domain.user.repository.SocialRepository;
 import com.feelem.server.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +33,7 @@ public class UserService {
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
   private final PointRepository pointRepository;
+  private final SocialRepository socialRepository;
 
   @Transactional(readOnly = true)
   public User findById(Long userId) {
@@ -139,6 +143,23 @@ public class UserService {
         .nickname(user.getNickname())
         .pointAmount(point.getAmount())
         .build();
+  }
+
+  // 소셜 아이디 조회
+  @Transactional(readOnly = true)
+  public Map<String, String> getSocialIds() {
+    User user = getCurrentUser();
+
+    Social social = socialRepository.findByUser(user)
+        .orElse(null); // 설정되지 않은 경우 null 가능
+
+    String instagramId = (social != null) ? social.getInstagramId() : null;
+    String xId = (social != null) ? social.getXId() : null;
+
+    return Map.of(
+        "instagramId", instagramId,
+        "xId", xId
+    );
   }
 
 }
