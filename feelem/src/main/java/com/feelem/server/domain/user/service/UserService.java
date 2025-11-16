@@ -13,6 +13,7 @@ import com.feelem.server.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,18 +149,35 @@ public class UserService {
   // 소셜 아이디 조회
   @Transactional(readOnly = true)
   public Map<String, String> getSocialIds() {
+
     User user = getCurrentUser();
 
     Social social = socialRepository.findByUser(user)
-        .orElse(null); // 설정되지 않은 경우 null 가능
+        .orElse(null);
 
     String instagramId = (social != null) ? social.getInstagramId() : null;
     String xId = (social != null) ? social.getXId() : null;
 
-    return Map.of(
-        "instagramId", instagramId,
-        "xId", xId
-    );
+    Map<String, String> result = new HashMap<>();
+    result.put("instagramId", instagramId);
+    result.put("xId", xId);
+
+    return result;
+  }
+
+
+  // 소셜 아이디 업데이트
+  @Transactional
+  public void updateSocialIds(String instagramId, String xId) {
+
+    User user = getCurrentUser();
+
+    Social social = socialRepository.findByUser(user)
+        .orElseGet(() -> new Social(user, null, null));
+
+    social.update(instagramId, xId);
+
+    socialRepository.save(social);
   }
 
 }

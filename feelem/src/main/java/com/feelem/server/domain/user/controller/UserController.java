@@ -86,4 +86,16 @@ public class UserController {
     return ResponseEntity.ok(result);
   }
 
+  // 소셜 아이디 설정
+  @PostMapping("/social")
+  public ResponseEntity<Void> setSocialIds(@RequestBody Map<String, String> request) {
+
+    String instagramId = request.get("instagramId");
+    String xId = request.get("xId");
+
+    userService.updateSocialIds(instagramId, xId);
+
+    return ResponseEntity.ok().build();
+  }
+
 }

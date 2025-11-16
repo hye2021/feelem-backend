@@ -1,7 +1,9 @@
 package com.feelem.server.domain.user.service;
 
 import com.feelem.server.domain.user.entity.Point;
+import com.feelem.server.domain.user.entity.Social;
 import com.feelem.server.domain.user.repository.PointRepository;
+import com.feelem.server.domain.user.repository.SocialRepository;
 import com.feelem.server.domain.user.OAuthAttributes;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.UserRepository;
@@ -25,7 +27,8 @@ import java.util.Map;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
   private final UserRepository userRepository;
-  private final PointRepository pointRepository; // ⭐ 추가
+  private final PointRepository pointRepository;
+  private final SocialRepository socialRepository; // ⭐ 추가
 
   @Override
   @Transactional
@@ -45,7 +48,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     User user = saveOrUpdate(attributes);
 
-    // 반환 attributes
     Map<String, Object> customAttributes = new HashMap<>(attributes.getAttributes());
     customAttributes.put("provider", attributes.getProvider());
     customAttributes.put("providerId", attributes.getProviderId());
@@ -59,8 +61,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
   }
 
   /**
-   * DB에 사용자가 있으면 이름만 업데이트하고,
-   * 없으면 신규 User를 만들고 포인트도 생성한다.
+   * 기존 사용자면 업데이트,
+   * 신규 사용자면 User + Point + Social 생성
    */
   private User saveOrUpdate(OAuthAttributes attributes) {
 
@@ -69,17 +71,18 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             attributes.getProviderId()
         )
         .map(entity -> {
-          // 기존 사용자 → 업데이트
           entity.update(attributes.getNickname());
           return entity;
         })
         .orElseGet(() -> {
-          // 신규 생성
-          User newUser = attributes.toEntity();
-          User savedUser = userRepository.save(newUser);
+          // ⭐ 신규 User 생성
+          User savedUser = userRepository.save(attributes.toEntity());
 
-          // ⭐ 신규User 생성 시 포인트 동시에 생성
+          // ⭐ 포인트 0 초기화 생성
           pointRepository.save(new Point(savedUser, 0));
+
+          // ⭐ 소셜 정보 null 초기화 생성
+          socialRepository.save(new Social(savedUser, null, null));
 
           return savedUser;
         });

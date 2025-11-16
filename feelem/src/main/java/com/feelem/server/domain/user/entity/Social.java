@@ -25,4 +25,16 @@ public class Social {
 
   @Column(name = "x_id")
   private String xId;
+
+
+  public Social(User user, String instagramId, String xId) {
+    this.user = user;
+    this.instagramId = instagramId;
+    this.xId = xId;
+  }
+
+  public void update(String instagramId, String xId) {
+    this.instagramId = instagramId;
+    this.xId = xId;
+  }
 }
