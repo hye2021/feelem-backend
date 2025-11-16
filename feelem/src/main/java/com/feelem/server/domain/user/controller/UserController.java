@@ -1,5 +1,6 @@
 package com.feelem.server.domain.user.controller;
 
+import com.feelem.server.domain.user.dto.UserMypageResponse;
 import com.feelem.server.domain.user.service.UserService;
 import com.feelem.server.domain.user.dto.UserDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,6 +66,17 @@ public class UserController {
     log.info("✔️ 가입된 회원 여부 확인: {}", exists);
 
     return ResponseEntity.ok(Map.of("exists", exists));
+  }
+
+  // 마이페이지 정보 조회
+  @GetMapping("/mypage")
+  public ResponseEntity<UserMypageResponse> getMyPage() {
+
+    UserMypageResponse response = userService.getMypage();
+
+    log.info("✔️ 마이페이지 정보가 조회되었습니다: {}", response);
+
+    return ResponseEntity.ok(response);
   }
 
 }

@@ -3,7 +3,10 @@ package com.feelem.server.domain.user.service;
 import com.feelem.server.config.jwt.JwtTokenProvider;
 import com.feelem.server.config.jwt.TokenInfo;
 import com.feelem.server.domain.filter.entity.Filter;
+import com.feelem.server.domain.user.dto.UserMypageResponse;
+import com.feelem.server.domain.user.entity.Point;
 import com.feelem.server.domain.user.entity.User;
+import com.feelem.server.domain.user.repository.PointRepository;
 import com.feelem.server.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Collection;
@@ -26,6 +29,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
+  private final PointRepository pointRepository;
 
   @Transactional(readOnly = true)
   public User findById(Long userId) {
@@ -108,4 +112,33 @@ public class UserService {
     User user = findById(userId);
     return !user.getNickname().startsWith("User_");
   }
+
+  // 보유 포인트 반환
+  @Transactional(readOnly = true)
+  public int getUserPoints() {
+    User currentUser = getCurrentUser();
+    Long userId = currentUser.getId();
+    Point point = pointRepository.findByUserId(userId)
+        .orElseThrow(() -> new EntityNotFoundException("포인트 정보를 찾을 수 없습니다: " + userId));
+    return point.getAmount();
+  }
+
+  // 마이페이지 dto
+  @Transactional(readOnly = true)
+  public UserMypageResponse getMypage() {
+
+    User user = getCurrentUser();
+
+    Point point = pointRepository.findByUserId(user.getId())
+        .orElseThrow(() -> new IllegalStateException(
+            "포인트 정보를 찾을 수 없습니다. userId=" + user.getId()
+        ));
+
+    return UserMypageResponse.builder()
+        .userId(user.getId())
+        .nickname(user.getNickname())
+        .pointAmount(point.getAmount())
+        .build();
+  }
+
 }
