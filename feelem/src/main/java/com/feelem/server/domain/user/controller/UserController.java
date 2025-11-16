@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -42,6 +43,19 @@ public class UserController {
 
     return ResponseEntity.ok().build();
   }
+
+  // 닉네임 중복 확인
+  @GetMapping("/nickname")
+  public ResponseEntity<Map<String, Boolean>> checkNicknameExists(
+      @RequestParam("candidate") String nickname
+  ) {
+    boolean exists = userService.isNicknameDuplicate(nickname);
+
+    log.info("✔️ 닉네임 중복 여부 확인: {} -> {}", nickname, exists);
+
+    return ResponseEntity.ok(Map.of("exists", exists));
+  }
+
 
   // 가입된 회원인지 확인
   @GetMapping("/exists")

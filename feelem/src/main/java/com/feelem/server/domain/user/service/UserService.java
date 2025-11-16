@@ -94,6 +94,12 @@ public class UserService {
     return user;
   }
 
+  // 닉네임 중복 확인
+  @Transactional(readOnly = true)
+  public boolean isNicknameDuplicate(String nickname) {
+    return userRepository.existsByNickname(nickname);
+  }
+
   // 가입된 회원인지 확인: 닉네임이 User_로 시작하는지 확인
   @Transactional(readOnly = true)
   public boolean isRegisteredUser() {
