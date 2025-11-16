@@ -2,6 +2,7 @@ package com.feelem.server.domain.user.service;
 
 import com.feelem.server.config.jwt.JwtTokenProvider;
 import com.feelem.server.config.jwt.TokenInfo;
+import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;

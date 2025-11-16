@@ -1,7 +1,5 @@
-package com.feelem.server.domain.bookmark.entity;
+package com.feelem.server.domain.filter.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

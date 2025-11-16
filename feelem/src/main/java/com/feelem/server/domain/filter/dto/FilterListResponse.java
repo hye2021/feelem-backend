@@ -6,23 +6,27 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class FilterSearchResponse {
+public class FilterListResponse {
 
   private Long id;
   private String name;
   private String thumbnailUrl;
-  private String creatorName;
+  private String creator;
   private int pricePoint;
   private Long useCount;
+  private boolean usage; // 구매 여부
+  private boolean bookmark; // 북마크 여부
 
-  public static FilterSearchResponse from(Filter filter) {
-    return FilterSearchResponse.builder()
+  public static FilterListResponse from(Filter filter, boolean usage, boolean bookmark) {
+    return FilterListResponse.builder()
         .id(filter.getId())
         .name(filter.getName())
         .thumbnailUrl(filter.getEditedImageUrl())
-        .creatorName(filter.getCreator().getNickname())
+        .creator(filter.getCreator().getNickname())
         .pricePoint(filter.getPrice())
         .useCount(filter.getUseCount())
+        .usage(usage)
+        .bookmark(bookmark)
         .build();
   }
 }

@@ -1,7 +1,7 @@
-package com.feelem.server.domain.bookmark.controller;
+package com.feelem.server.domain.filter.controller;
 
-import com.feelem.server.domain.bookmark.entity.Onboarding;
-import com.feelem.server.domain.bookmark.service.OnboardingService;
+import com.feelem.server.domain.filter.entity.Onboarding;
+import com.feelem.server.domain.filter.service.OnboardingService;
 import com.feelem.server.domain.filter.entity.Filter;
 import java.util.List;
 import java.util.stream.Collectors;

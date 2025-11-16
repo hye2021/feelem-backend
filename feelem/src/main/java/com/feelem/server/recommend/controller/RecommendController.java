@@ -2,7 +2,7 @@ package com.feelem.server.recommend.controller;
 
 import com.feelem.server.domain.filter.entity.Filter; // [변경] Filter 엔티티 Import
 import com.feelem.server.domain.filter.service.FilterService;
-import com.feelem.server.domain.filter.dto.FilterSearchResponse; // [변경] 사용자 DTO Import
+import com.feelem.server.domain.filter.dto.FilterListResponse; // [변경] 사용자 DTO Import
 import com.feelem.server.recommend.dto.HomeRecommendRequest;
 import com.feelem.server.recommend.RecommendClient;
 import com.feelem.server.recommend.dto.RecommendResponse;
@@ -29,7 +29,7 @@ public class RecommendController {
    * (GET /api/filters/search?q=...&page=...)
    */
   @GetMapping("/search")
-  public Mono<List<FilterSearchResponse>> searchFilters(
+  public Mono<List<FilterListResponse>> searchFilters(
       @RequestParam("q") String query,
       @RequestParam(value = "page", defaultValue = "0") int page
   ) {
@@ -45,7 +45,7 @@ public class RecommendController {
    * (POST /api/filters/recommend/home?page=...)
    */
   @PostMapping("/recommend/home")
-  public Mono<List<FilterSearchResponse>> recommendHomeFilters(
+  public Mono<List<FilterListResponse>> recommendHomeFilters(
       @RequestBody HomeRecommendRequest requestBody, // 최근 사용 필터 ID 2개
       @RequestParam(value = "page", defaultValue = "0") int page
   ) {
@@ -60,7 +60,7 @@ public class RecommendController {
    * [추가] ID 리스트를 받아 DB에서 조회 후 DTO 리스트로 변환하는 공통 헬퍼 메서드
    * (N+1 문제 해결 및 추천 순서 보장)
    */
-  private Mono<List<FilterSearchResponse>> mapIdsToFilterSearchResponse(List<String> ids) {
+  private Mono<List<FilterListResponse>> mapIdsToFilterSearchResponse(List<String> ids) {
     if (ids == null || ids.isEmpty()) {
       return Mono.just(List.of());
     }
@@ -83,7 +83,7 @@ public class RecommendController {
       return longIds.stream()
           .map(filterMap::get) // ID 순서대로 Filter 객체를 찾음
           .filter(java.util.Objects::nonNull) // (혹시 삭제된 필터가 있으면 null)
-          .map(FilterSearchResponse::from) // 사용자 DTO로 변환
+          .map(FilterListResponse::from) // 사용자 DTO로 변환
           .collect(Collectors.toList());
     });
   }

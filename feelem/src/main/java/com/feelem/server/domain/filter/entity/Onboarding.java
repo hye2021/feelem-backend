@@ -1,6 +1,5 @@
-package com.feelem.server.domain.bookmark.entity;
+package com.feelem.server.domain.filter.entity;
 
-import com.feelem.server.domain.filter.entity.Filter;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;

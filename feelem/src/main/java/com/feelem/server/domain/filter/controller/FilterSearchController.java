@@ -2,7 +2,7 @@ package com.feelem.server.domain.filter.controller;
 
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.filter.service.FilterSearchService;
-import com.feelem.server.domain.filter.dto.FilterSearchResponse;
+import com.feelem.server.domain.filter.dto.FilterListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,18 +24,19 @@ public class FilterSearchController {
 
   @Operation(summary = "태그로 필터 검색 (20개씩 페이지네이션)")
   @GetMapping("/search")
-  public ResponseEntity<Page<FilterSearchResponse>> searchFiltersByTag(
+  public ResponseEntity<Page<FilterListResponse>> searchFiltersByTag(
       @RequestParam("tag") String tag,
       @RequestParam(defaultValue = "0") int page
   ) {
     Page<Filter> filters = filterSearchService.searchByTag(tag, page);
 
-    // ✅ 새 DTO 매핑 (useCount 포함)
-    List<FilterSearchResponse> dtoList = filters.getContent().stream()
-        .map(FilterSearchResponse::from)
+    // ✅ 새 DTO 매핑 (useCount 포함)]
+    // usage: 내 구매 여부, bookmark: 내 북마크 여부
+    List<FilterListResponse> dtoList = filters.stream()
+        .map(filter -> FilterListResponse.fromEntity(filter, false, false))
         .toList();
 
-    Page<FilterSearchResponse> responsePage = new PageImpl<>(
+    Page<FilterListResponse> responsePage = new PageImpl<>(
         dtoList,
         PageRequest.of(page, filters.getSize()),
         filters.getTotalElements()

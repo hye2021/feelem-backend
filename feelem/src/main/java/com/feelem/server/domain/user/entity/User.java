@@ -1,9 +1,5 @@
 package com.feelem.server.domain.user.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.feelem.server.domain.bookmark.entity.Bookmark;
-import com.feelem.server.domain.filter.entity.Filter;
-import com.feelem.server.domain.review.entity.Review;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -11,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
