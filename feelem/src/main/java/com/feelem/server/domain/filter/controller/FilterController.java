@@ -1,7 +1,9 @@
 package com.feelem.server.domain.filter.controller;
 
-import com.feelem.server.domain.filter.dto.FilterDto;
+import com.feelem.server.domain.filter.dto.FilterCreateRequest;
+import com.feelem.server.domain.filter.dto.FilterPriceDto;
 import com.feelem.server.domain.filter.dto.FilterListResponse;
+import com.feelem.server.domain.filter.dto.FilterResponse;
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.filter.service.FilterService;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +29,9 @@ public class FilterController {
   // 기존 코드 유지 (필터 생성)
   // ---------------------------------------------------------
   @PostMapping
-  public ResponseEntity<FilterDto.Response> createFilter(@RequestBody FilterDto.CreateRequest request) {
+  public ResponseEntity<FilterResponse> createFilter(@RequestBody FilterCreateRequest request) {
     Filter filter = filterService.createFilter(request);
-    FilterDto.Response response = filterService.getFilter(filter.getId());
+    FilterResponse response = filterService.getFilter(filter.getId());
 
     log.info("✔️ 필터가 생성되었습니다: {}", response);
 
@@ -40,7 +42,7 @@ public class FilterController {
   // 기존 코드 유지 (필터 상세 조회)
   // ---------------------------------------------------------
   @GetMapping("/{filterId}")
-  public ResponseEntity<FilterDto.Response> getFilter(@PathVariable Long filterId) {
+  public ResponseEntity<FilterResponse> getFilter(@PathVariable Long filterId) {
 
     log.info("✔️ 필터가 조회되었습니다: filterId={}", filterId);
 
@@ -53,7 +55,7 @@ public class FilterController {
   @PutMapping("/{filterId}/price")
   public ResponseEntity<Void> updatePrice(
       @PathVariable Long filterId,
-      @RequestBody FilterDto.UpdatePriceRequest request
+      @RequestBody FilterPriceDto request
   ) {
     filterService.updatePrice(filterId, request.getPrice());
 

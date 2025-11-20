@@ -20,7 +20,6 @@ public class StickerService {
   private final StickerRepository stickerRepository;
   private final UserService userService;
 
-  @Transactional
   public Sticker createSticker(StickerType type, String imageUrl) {
     User creator = userService.getCurrentUser();
 
@@ -37,14 +36,13 @@ public class StickerService {
 
   public List<StickerDto.Response> getStickers() {
     User user = userService.getCurrentUser();
-    List<StickerDto.Response> response = stickerRepository.findByCreatorAndIsDeletedFalse(user).stream()
+    List<StickerDto.Response> response = stickerRepository.findByCreatorAndIsDeletedFalseOrderByCreatedAtDesc(user).stream()
         .map(StickerDto.Response::new)
         .toList();
 
     return response;
   }
 
-  @Transactional
   public void deleteSticker(Long id) {
     Sticker sticker = stickerRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("해당 스티커를 찾을 수 없습니다. id=" + id));

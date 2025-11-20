@@ -1,6 +1,9 @@
 package com.feelem.server.domain.filter.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.feelem.server.domain.sticker.entity.FaceStickerPlacement;
+import com.feelem.server.domain.user.entity.Social;
+import com.feelem.server.domain.user.entity.SocialType;
 import com.feelem.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -41,6 +44,9 @@ public class Filter {
   @Column(name = "edited_image_url", nullable = false)
   private String editedImageUrl;
 
+  @Column(name = "sticker_image_no_face_url")
+  private String stickerImageNoFaceUrl;
+
   // 기본 지정 비율 (x:y)
   @Column(name = "aspect_x")
   private Integer aspectX;
@@ -68,38 +74,44 @@ public class Filter {
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  // sns 아이디 표기
+  @Column(name = "social_type")
+  private SocialType socialType;
+
+  // Social 연결 엔티티
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "social_id")
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+  private Social social;
+
   // 태그 목록 (연결 엔티티)
   @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FilterTag> filterTags = new ArrayList<>();
 
   // 스티커 목록 (연결 엔티티
   @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<FilterSticker> filterStickers = new ArrayList<>();
+  private List<FaceStickerPlacement> faceStickerPlacements = new ArrayList<>();
 
   // todo: 후기 목록
   // @OneToMany(mappedBy="filter")
   // private List<Review> reviews;
 
   @Builder
-  public Filter(User creator,
-      String name,
-      Integer price,
-      Map<String, Double> colorAdjustments,
-      String originalImageUrl,
-      String editedImageUrl,
-      Integer aspectX,
-      Integer aspectY) {
+  public Filter(User creator, String name, Integer price,
+      String originalImageUrl, String editedImageUrl, String stickerImageNoFaceUrl,
+      Integer aspectX, Integer aspectY, Map<String, Double> colorAdjustments,
+      SocialType socialType, Social social) {
     this.creator = creator;
     this.name = name;
     this.price = price;
-    this.colorAdjustments = colorAdjustments; // 위 표준 키(13개) 사용
     this.originalImageUrl = originalImageUrl;
     this.editedImageUrl = editedImageUrl;
+    this.stickerImageNoFaceUrl = stickerImageNoFaceUrl;
     this.aspectX = aspectX;
     this.aspectY = aspectY;
-    this.isDeleted = false;
-    this.saveCount = 0L;
-    this.useCount = 0L;
+    this.colorAdjustments = colorAdjustments;
+    this.socialType = socialType;
+    this.social = social;
     this.createdAt = LocalDateTime.now();
   }
 

@@ -3,6 +3,7 @@ package com.feelem.server.domain.review.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.user.entity.Social;
+import com.feelem.server.domain.user.entity.SocialType;
 import com.feelem.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -35,6 +36,10 @@ public class Review {
   @Column(name = "image_url", nullable = false)
   private String imageUrl;
 
+  // sns 아이디 표기
+  @Column(name = "social_type")
+  private SocialType socialType;
+
   // 유저가 선택한 소셜 계정 (선택적, null 가능)
   @ManyToOne(fetch = FetchType.LAZY, optional = true)
   @JoinColumn(name = "social_id")
@@ -43,16 +48,13 @@ public class Review {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
-  }
-
   @Builder
-  public Review(User reviewer, Filter filter, String imageUrl, Social social) {
+  public Review(User reviewer, Filter filter, String imageUrl, SocialType socialType,
+      Social social) {
     this.reviewer = reviewer;
     this.filter = filter;
     this.imageUrl = imageUrl;
+    this.socialType = socialType;
     this.social = social;
     this.createdAt = LocalDateTime.now();
   }

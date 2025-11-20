@@ -17,6 +17,7 @@ public class FilterListResponse {
   private boolean usage; // 구매 여부
   private boolean bookmark; // 북마크 여부
 
+
   public static FilterListResponse from(Filter filter, boolean usage, boolean bookmark) {
     return FilterListResponse.builder()
         .id(filter.getId())

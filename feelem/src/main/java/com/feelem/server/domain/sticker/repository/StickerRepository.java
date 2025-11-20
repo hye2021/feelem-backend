@@ -11,4 +11,6 @@ import java.util.List;
 public interface StickerRepository extends JpaRepository<Sticker, Long> {
 
   List<Sticker> findByCreatorAndIsDeletedFalse(User creator);
+
+  List<Sticker> findByCreatorAndIsDeletedFalseOrderByCreatedAtDesc(User user);
 }

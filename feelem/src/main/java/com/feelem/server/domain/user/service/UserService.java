@@ -180,4 +180,9 @@ public class UserService {
     socialRepository.save(social);
   }
 
+  @Transactional(readOnly = true)
+  public Social getSocialByUser(User user) {
+    return socialRepository.findByUser(user)
+        .orElseThrow(() -> new EntityNotFoundException("소셜 정보를 찾을 수 없습니다: " + user.getId()));
+  }
 }

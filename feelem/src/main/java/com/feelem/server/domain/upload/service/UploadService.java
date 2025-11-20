@@ -28,6 +28,18 @@ public class UploadService {
   }
 
   @Transactional
+  public String uploadStickerImage(MultipartFile file) throws Exception {
+    // 1) S3 업로드
+    String fileUrl = s3Uploader.upload(file, "stickerImagesForFilter");
+
+    // 2) DB 저장
+    uploadRepository.save(new UploadedFile(fileUrl));
+
+    // 3) URL 반환
+    return fileUrl;
+  }
+
+  @Transactional
   public String uploadFilterPreview(MultipartFile file) throws Exception {
     // 1) S3 업로드
     String fileUrl = s3Uploader.upload(file, "filter-previews");

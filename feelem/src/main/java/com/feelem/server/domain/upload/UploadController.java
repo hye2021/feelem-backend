@@ -29,6 +29,17 @@ public class UploadController {
   }
 
   /**
+   * ✅ 스티커 이미지(필터용) 업로드
+   */
+  @PostMapping("/sticker-images")
+  public ResponseEntity<String> uploadStickerImage(@RequestParam("file") MultipartFile file)
+      throws Exception {
+    String url = uploadService.uploadStickerImage(file);
+    log.info("✔️ 스티커 이미지(필터용) 업로드 완료: {}", url);
+    return ResponseEntity.ok(url);
+  }
+
+  /**
    * ✅ 필터 오리지널 + 프리뷰 이미지를 한 번에 업로드
    */
   @PostMapping("/filters")
