@@ -27,7 +27,6 @@ public class FilterCreateRequest {
   private Integer aspectX;
   private Integer aspectY;
   private Map<String, Double> colorAdjustments;
-
   private List<FilterCreateRequest.FaceSticker> stickers;
 
   @Getter
@@ -35,7 +34,7 @@ public class FilterCreateRequest {
   @NoArgsConstructor
   @AllArgsConstructor
   @Builder
-  public class FaceSticker {
+  public static class FaceSticker {
 
     private Long stickerId;
     private double relX;
