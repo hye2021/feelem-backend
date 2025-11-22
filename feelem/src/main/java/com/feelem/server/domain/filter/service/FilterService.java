@@ -6,7 +6,6 @@ import com.feelem.server.domain.filter.dto.FilterResponse;
 import com.feelem.server.domain.filter.dto.FilterResponse.FaceStickerResponse;
 import com.feelem.server.domain.filter.entity.Bookmark;
 import com.feelem.server.domain.filter.repository.BookmarkRepository;
-import com.feelem.server.domain.filter.dto.FilterPriceDto;
 import com.feelem.server.domain.filter.dto.FilterListResponse;
 import com.feelem.server.domain.filter.entity.Filter;
 //import com.feelem.server.domain.filter.entity.FilterSticker;
@@ -28,12 +27,11 @@ import com.feelem.server.domain.user.entity.Social;
 import com.feelem.server.domain.user.entity.SocialType;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.PointRepository;
-import com.feelem.server.domain.user.repository.SocialRepository;
 import com.feelem.server.domain.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +45,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 @Transactional
+@Slf4j
 public class FilterService {
   private final UserService userService;
 
@@ -190,7 +189,10 @@ public class FilterService {
     boolean isMine = filter.getCreator().getId().equals(currentUser.getId());
     // 현재 사용자가 구매 혹은 사용한 필터인지 확인
     boolean isUsed = filterTransactionRepo.existsByBuyerIdAndFilterId(currentUser.getId(), filterId);
-    return new FilterResponse(filter, isMine, isUsed, tags, stickers);
+    // 현재 사용자가 북마크한 필터인지 확인
+    boolean isBookmarked = bookmarkRepository.existsByUserAndFilter(currentUser, filter);
+
+    return new FilterResponse(filter, isMine, isUsed, isBookmarked, tags, stickers);
   }
 
 
@@ -205,6 +207,26 @@ public class FilterService {
   public Page<FilterListResponse> getRecentFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderByCreatedAtDesc(pageable);
+
+    // 반한된 리스트 로그 찍기
+    for (Filter filter : page.getContent()) {
+      log.info("➡️ Recent Filter ID: {}, Created At: {}", filter.getId(), filter.getCreatedAt());
+    }
+
+    return page.map(filter -> toFilterListResponse(filter, user));
+  }
+
+  /** 홈 화면용 - 인기 등록 필터 페이징 조회 */
+  @Transactional(readOnly = true)
+  public Page<FilterListResponse> getHotFilters(Pageable pageable) {
+    User user = userService.getCurrentUser();
+    Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderBySaveCountDesc(pageable);
+
+    // 반한된 리스트 로그 찍기
+    for (Filter filter : page.getContent()) {
+      log.info("➡️ Hot Filter ID: {}, Save Count: {}", filter.getId(), filter.getSaveCount());
+    }
+
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
@@ -221,8 +243,10 @@ public class FilterService {
 
     if (exists) {
       bookmarkRepository.deleteByUserAndFilter(user, filter);
+      filter.decreaseSaveCount();
     } else {
       bookmarkRepository.save(new Bookmark(user, filter));
+      filter.increaseSaveCount();
     }
   }
 
@@ -307,66 +331,61 @@ public class FilterService {
   // ================================================================
   @Transactional
   public void useFilter(Long filterId) {
+    FilterTransaction transaction;
+
     User user = userService.getCurrentUser();
     Filter filter = findById(filterId);
 
-    // 이미 구매한 적 있는지 확인 (중복 방지)
-    boolean exists = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filterId);
-    if (exists) {
-      return;  // 이미 구매/사용한 필터는 다시 구매하지 않음
-    }
-
-    int price = filter.getPrice();
-
-    // 1) 무료 필터 처리
-    if (price == 0) {
-
-      FilterTransaction tx = FilterTransaction.builder()
-          .type(FilterTransactionType.FREE_USE)
-          .amount(0)                // 금액 0
-          .balance(0)               // 잔액 의미 없음 → 0
-          .buyer(user)
-          .seller(filter.getCreator())
-          .filter(filter)
-          .usedAt(LocalDateTime.now())
-          .build();
-
-      filterTransactionRepository.save(tx);
+    // 만약 내가 제작한 필터를 사용하는 경우에는 기록하지 않음
+    if (filter.getCreator().getId().equals(user.getId())) {
       return;
     }
 
-    // 2) 유료 필터 구매 처리
-
-    // 유저 포인트 조회
-    Point point = pointRepository.findByUserId(user.getId())
-        .orElseThrow(() -> new EntityNotFoundException("포인트 정보가 없습니다."));
-
-    int currentAmount = point.getAmount();
-
-    // 포인트 부족 시 예외
-    if (currentAmount < price) {
-      throw new IllegalStateException("포인트가 부족합니다.");
+    // 구매한 내역 있으면 업데이트, 없으면 새로 생성
+    boolean exists = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filterId);
+    if (exists) {
+      transaction = filterTransactionRepository.findByBuyerIdAndFilterId(user.getId(), filterId);
+    } else {
+      transaction = new FilterTransaction(user, filter.getCreator(), filter);
     }
 
-    // 포인트 차감
-    int newBalance = currentAmount - price;
-    point.setAmount(newBalance);
+    // 환불된 필터 차단
+    if (transaction.getType() == FilterTransactionType.REFUND) {
+      throw new IllegalStateException("환불된 필터는 사용할 수 없습니다.");
+    }
 
-    // 트랜잭션 생성 (유료 구매)
-    FilterTransaction tx = FilterTransaction.builder()
-        .type(FilterTransactionType.PURCHASE)
-        .amount(price)
-        .balance(newBalance)
-        .buyer(user)
-        .seller(filter.getCreator())
-        .filter(filter)
-        .usedAt(LocalDateTime.now())
-        .build();
+    // 현재 transaction의 type에 따라 처리
+    int price = filter.getPrice();
+    FilterTransactionType type = transaction.getType();
 
-    filterTransactionRepository.save(tx);
+    if (price > 0 &&
+        (type == FilterTransactionType.INIT || type == FilterTransactionType.FREE_USE)) {
+      // 유료 필터로 처음 구매하거나, 무료에서 유료로 전환하는 경우
+      // 유저 포인트 조회
+      Point point = pointRepository.findByUserId(user.getId())
+          .orElseThrow(() -> new EntityNotFoundException("포인트 정보가 없습니다."));
+      int currentAmount = point.getAmount();
+      // 포인트 부족 시 예외
+      if (currentAmount < price) {
+        throw new IllegalStateException("포인트가 부족합니다.");
+      }
+      // 트랜잭션 업데이트 (유료 사용)
+      int balance = transaction.buyFirst(price, currentAmount);
+      // 포인트 차감
+      point.setAmount(balance);
+    } else if (price <= 0 &&
+        type == FilterTransactionType.INIT) {
+    } else {
+      transaction.use();
+    }
+    filter.increaseUseCount();
+
+    // 구매자, 현재 타입, 구매 가격, 잔액 출력
+    log.info("🛒 Filter Use - Buyer ID: {}, Type: {}, Amount: {}, Balance: {}",
+        user.getId(), transaction.getType(), transaction.getAmount(), transaction.getBalance());
+
+    filterTransactionRepository.save(transaction);
   }
-
-
 
   @Transactional(readOnly = true)
   public Page<FilterListResponse> getUsedFilters(Pageable pageable) {

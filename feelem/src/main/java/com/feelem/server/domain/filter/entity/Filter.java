@@ -79,7 +79,7 @@ public class Filter {
   private SocialType socialType;
 
   // Social 연결 엔티티
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "social_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Social social;
@@ -113,9 +113,12 @@ public class Filter {
     this.socialType = socialType;
     this.social = social;
     this.createdAt = LocalDateTime.now();
+    this.saveCount = 0L;
+    this.useCount = 0L;
   }
 
   public void increaseSaveCount() { this.saveCount++; }
+  public void decreaseSaveCount() { if (this.saveCount > 0) this.saveCount--; }
   public void increaseUseCount()  { this.useCount++; }
   public void softDelete()        { this.isDeleted = true; }
   public void updatePrice(Integer price) { this.price = price; }

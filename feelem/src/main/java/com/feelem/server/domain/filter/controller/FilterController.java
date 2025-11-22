@@ -37,7 +37,6 @@ public class FilterController {
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
-
   // ---------------------------------------------------------
   // 기존 코드 유지 (필터 상세 조회)
   // ---------------------------------------------------------
@@ -77,20 +76,6 @@ public class FilterController {
   }
 
   // ---------------------------------------------------------
-  // 🔥 새로운 기능: 홈 화면 최신 필터 조회
-  // ---------------------------------------------------------
-  @GetMapping("/recent")
-  public ResponseEntity<Page<FilterListResponse>> getRecentFilters(
-      @PageableDefault(size = 20) Pageable pageable
-  ) {
-
-    log.info("✔️ 홈 화면용 최신 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
-
-    return ResponseEntity.ok(filterService.getRecentFilters(pageable));
-  }
-
-  // ---------------------------------------------------------
   // 1) 현재 필터를 북마크로 설정(on/off)
   // ---------------------------------------------------------
   @PutMapping("/{filterId}/bookmark")
@@ -107,23 +92,6 @@ public class FilterController {
     return ResponseEntity.ok(result);
   }
 
-
-  // ---------------------------------------------------------
-  // 2) 북마크 목록 조회
-  // ---------------------------------------------------------
-  @GetMapping("/bookmarks")
-  public ResponseEntity<Page<FilterListResponse>> getBookmarks(
-      @PageableDefault(size = 20) Pageable pageable
-  ) {
-
-    Page<FilterListResponse> responses = filterService.getBookmarkedFilters(pageable);
-
-    log.info("⭐ 북마크 목록 조회 요청: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
-
-    return ResponseEntity.ok(responses);
-  }
-
   // ---------------------------------------------------------
   // 3) 필터 구매 or 사용
   // ---------------------------------------------------------
@@ -135,21 +103,5 @@ public class FilterController {
     log.info("⭐ 필터 사용/구매 완료: filterId={}", filterId);
 
     return ResponseEntity.noContent().build();
-  }
-
-  // ---------------------------------------------------------
-  // 4) 구매 or 사용한 필터 목록 조회 (20개 페이징)
-  // ---------------------------------------------------------
-  @GetMapping("/usage")
-  public ResponseEntity<Page<FilterListResponse>> getUsedFilters(
-      @PageableDefault(size = 20) Pageable pageable
-  ) {
-
-    Page<FilterListResponse> responses = filterService.getUsedFilters(pageable);
-
-    log.info("⭐ 사용/구매 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
-
-    return ResponseEntity.ok(responses);
   }
 }

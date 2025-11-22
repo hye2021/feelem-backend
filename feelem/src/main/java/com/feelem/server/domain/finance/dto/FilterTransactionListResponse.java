@@ -24,7 +24,7 @@ public class FilterTransactionListResponse {
         .amount(tx.getAmount())
         .balance(tx.getBalance())
         .type(tx.getType().name())
-        .createdAt(tx.getCreatedAt().toString())
+        .createdAt(tx.getPurchasedAt().toString())
         .build();
   }
 }

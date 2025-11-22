@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CashTransactionRepository extends JpaRepository<CashTransaction, Long> {
 
-  @Query("select ct from CashTransaction ct where ct.user.id = :userId order by ct.createdAt desc")
+  @Query("select ct from CashTransaction ct where ct.user.id = :userId and ct.type = 'CHARGE' order by ct.createdAt desc")
   Page<CashTransaction> findChargeHistory(@Param("userId") Long userId, Pageable pageable);
 }
 

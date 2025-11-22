@@ -10,10 +10,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Getter
 public class FilterResponse {
 
   private Boolean isMine;
   private Boolean isUsed;
+  private Boolean isBookmarked;
 
   private Long id;
   private String name;
@@ -36,7 +38,7 @@ public class FilterResponse {
   private String socialType;   // 대표 소셜 종류
   private String socialValue;  // 대표 소셜 ID 값
 
-  public FilterResponse(Filter filter, Boolean isMine, Boolean isUsed, List<String> tags,
+  public FilterResponse(Filter filter, Boolean isMine, Boolean isUsed, Boolean isBookmarked, List<String> tags,
       List<FaceStickerResponse> stickers) {
     this.isMine = isMine;
     this.isUsed = isUsed;
@@ -54,6 +56,7 @@ public class FilterResponse {
     this.stickers = stickers;
     this.saveCount = filter.getSaveCount();
     this.useCount = filter.getUseCount();
+    this.isBookmarked = isBookmarked;
 
     // sns 아이디
     SocialType type = filter.getSocialType();

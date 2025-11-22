@@ -14,10 +14,16 @@ public interface FilterTransactionRepository extends JpaRepository<FilterTransac
 
   boolean existsByBuyerIdAndFilterId(Long userId, Long filterId);
 
+  @Query("select ft from FilterTransaction ft " +
+          "join fetch ft.filter f " +
+          "where ft.buyer.id = :userId and f.id = :filterId")
+  FilterTransaction findByBuyerIdAndFilterId(Long userId, Long filterId);
+
   @Query("select ft.filter from FilterTransaction ft where ft.buyer.id = :userId")
   Page<Filter> findUsedOrPurchasedFilters(@Param("userId") Long userId, Pageable pageable);
 
-  @Query("select ft from FilterTransaction ft where ft.buyer.id = :userId order by ft.createdAt desc")
+  // type이 PURCHASE인 경우만
+  @Query("select ft from FilterTransaction ft where ft.buyer.id = :userId and ft.type = 'PURCHASE' order by ft.purchasedAt desc")
   Page<FilterTransaction> findUsageHistory(@Param("userId") Long userId, Pageable pageable);
 
 }

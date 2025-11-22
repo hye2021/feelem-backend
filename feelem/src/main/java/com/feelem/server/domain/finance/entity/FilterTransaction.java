@@ -4,7 +4,6 @@ import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -52,30 +51,42 @@ public class FilterTransaction {
   @JoinColumn(name = "filter_id", nullable = false)
   private Filter filter;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
+  @Column(name = "purchased_at", nullable = false)
+  private LocalDateTime purchasedAt;
 
   @Column(name = "used_at", nullable = false)
   private LocalDateTime usedAt;
 
-  @Builder
-  public FilterTransaction(
-      FilterTransactionType type,
-      int amount,
-      int balance,
-      User buyer,
-      User seller,
-      Filter filter,
-      LocalDateTime usedAt
-  ) {
-    this.type = type;
-    this.amount = amount;
-    this.balance = balance;
+  // 초기생성자 (사용, 구매 정보X)
+  public FilterTransaction(User buyer, User seller, Filter filter) {
     this.buyer = buyer;
     this.seller = seller;
     this.filter = filter;
-    this.usedAt = usedAt;
-    this.createdAt = LocalDateTime.now();
+
+    this.type = FilterTransactionType.INIT;
+    this.amount = 0;
+    this.balance = 0;
+    this.purchasedAt = LocalDateTime.now();
+    this.usedAt = LocalDateTime.now();
+  }
+
+  public int buyFirst(int amount, int currentBalance) {
+    this.type = FilterTransactionType.PURCHASE;
+    this.amount = amount;
+    this.balance = currentBalance - amount;
+    this.purchasedAt = LocalDateTime.now();
+    this.usedAt = LocalDateTime.now();
+    return this.balance;
+  }
+
+  public void freeUseFirst() {
+    this.type = FilterTransactionType.FREE_USE;
+    this.amount = 0;
+    this.usedAt = LocalDateTime.now();
+  }
+
+  public void use() {
+    this.usedAt = LocalDateTime.now();
   }
 
   @PrePersist

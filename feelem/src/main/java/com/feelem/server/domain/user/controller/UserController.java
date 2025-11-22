@@ -29,7 +29,7 @@ public class UserController {
   public ResponseEntity<UserDto.ProfileResponse> getUserProfile(@PathVariable Long userId) {
     UserDto.ProfileResponse response = new UserDto.ProfileResponse(userService.findById(userId));
 
-    log.info("✔️ 사용자 프로필이 조회되었습니다: {}", response);
+    log.info("❕ 사용자 프로필이 조회되었습니다: {}", response);
 
     return ResponseEntity.ok(response);
   }
@@ -74,7 +74,7 @@ public class UserController {
 
     UserMypageResponse response = userService.getMypage();
 
-    log.info("✔️ 마이페이지 정보가 조회되었습니다: {}", response);
+    log.info("🏠 마이페이지 정보가 조회되었습니다: {}", response);
 
     return ResponseEntity.ok(response);
   }

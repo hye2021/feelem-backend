@@ -22,11 +22,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-    log.info("🔍 요청 URI: {}", request.getRequestURI());
+//    log.info("🔍 요청 URI: {}", request.getRequestURI());
 
     String token = resolveToken(request); // Request Header에서 JWT 토큰 추출
 
-    log.info("🔑 JWT 토큰 추출 완료: {}", token != null ? "존재함" : "없음");
+//    log.info("🔑 JWT 토큰 추출 완료: {}", token != null ? "존재함" : "없음");
 
     try {
       // 토큰 유효성 검사
@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Authentication authentication = jwtTokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        log.info("➡️ 인증 성공: {}", authentication.getName());
+//        log.info("➡️ 인증 성공: {}", authentication.getName());
       } else if (token != null) { // 토큰은 있으나 validateToken에서 false를 반환한 경우 (다른 유효하지 않은 토큰)
         log.info("❌ 유효하지 않은 JWT 토큰입니다. URI: {}", request.getRequestURI());
         // 여기서도 403 Forbidden 등으로 처리할 수 있습니다.

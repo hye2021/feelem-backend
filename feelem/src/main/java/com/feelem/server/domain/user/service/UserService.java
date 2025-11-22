@@ -43,7 +43,7 @@ public class UserService {
   }
 
   public User getCurrentUser() {
-    log.info("✔️ 현재 인증된 사용자를 SecurityContext에서 조회합니다.");
+//    log.info(" 현재 요청 보낸 사용자 조회 (JWT기반)");
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     // ✅ OAuth 로그인한 유저는 SecurityContext에서 email 기반으로 가져오기
@@ -52,7 +52,7 @@ public class UserService {
     }
 
     String name = authentication.getName();
-    log.info("✔️ 요청 하는 user의 authentication name: {}", name);
+    log.info("👩‍🦰 현재 요청 하는 user의 id: {}", name);
 
     // ✅ 숫자인 경우 ID로 조회
     try {
@@ -100,6 +100,13 @@ public class UserService {
     Long userId = currentUser.getId();
     User user = findById(userId);
     user.update(newNickname);
+
+    // 이 시점에서 social과 point가 없으면 추가하는 로직 명시적으로 추가!!
+    socialRepository.findByUser(user)
+        .orElseGet(() -> socialRepository.save(new Social(user, null, null)));
+    pointRepository.findByUserId(userId)
+        .orElseGet(() -> pointRepository.save(new Point(user, 0)));
+
     return user;
   }
 
