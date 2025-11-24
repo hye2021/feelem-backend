@@ -88,6 +88,22 @@ public class FilterListController {
   }
 
   // ---------------------------------------------------------
+  // 내가 제작한 필터 목록
+  // ---------------------------------------------------------
+  @GetMapping("my")
+  public ResponseEntity<Page<FilterListResponse>> getMyFilters(
+      @PageableDefault(size = 20) Pageable pageable
+  ) {
+
+    Page<FilterListResponse> responses = filterService.getMyFilters(pageable);
+
+    log.info("⭐ 내가 올린 필터 조회: page={}, size={}",
+        pageable.getPageNumber(), pageable.getPageSize());
+
+    return ResponseEntity.ok(responses);
+  }
+
+  // ---------------------------------------------------------
   // 태그검색
   // ---------------------------------------------------------
   @Operation(summary = "태그로 필터 검색 (20개씩 페이지네이션)")

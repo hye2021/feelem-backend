@@ -256,6 +256,14 @@ public class FilterService {
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
+  /** 아카이브- 내가 올린 필터 목록 조회 */
+  @Transactional(readOnly = true)
+  public Page<FilterListResponse> getMyFilters(Pageable pageable) {
+    User user = userService.getCurrentUser();
+    Page<Filter> page = filterRepository.findAllByCreatorIdAndIsDeletedFalseOrderByCreatedAtDesc(user.getId(), pageable);
+
+    return page.map(filter -> toFilterListResponse(filter, user));
+  }
 
   // ================================================================
   // 3) 북마크 기능 (BookmarkService → FilterService로 통합)

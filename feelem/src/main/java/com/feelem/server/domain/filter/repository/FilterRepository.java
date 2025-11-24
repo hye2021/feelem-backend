@@ -34,4 +34,11 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
   @Query(value = "SELECT f FROM Filter f JOIN FETCH f.creator WHERE f.isDeleted = false ORDER BY f.saveCount DESC",
       countQuery = "SELECT count(f) FROM Filter f WHERE f.isDeleted = false")
   Page<Filter> findAllByIsDeletedFalseOrderBySaveCountDesc(Pageable pageable);
+
+  // -----------------------------------------------------------------------
+  // 특정 User가 제작한 필터 목록 조회
+  // -----------------------------------------------------------------------
+  @Query(value = "SELECT f FROM Filter f JOIN FETCH f.creator WHERE f.creator.id = :creatorId AND f.isDeleted = false ORDER BY f.createdAt DESC",
+      countQuery = "SELECT count(f) FROM Filter f WHERE f.creator.id = :creatorId AND f.isDeleted = false")
+  Page<Filter> findAllByCreatorIdAndIsDeletedFalseOrderByCreatedAtDesc(@Param("creatorId") Long creatorId, Pageable pageable);
 }

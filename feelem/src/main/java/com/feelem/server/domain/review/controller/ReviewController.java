@@ -45,6 +45,14 @@ public class ReviewController {
     }
   }
 
+  // ✅ 내가 작성한 리뷰 목록 조회 (아카이브용) : 20개씩 페이징
+  @GetMapping("/my")
+  public ResponseEntity<Page<ReviewResponse>> getMyReviews(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(reviewService.getMyReviews(page, size));
+  }
+
   // ✅ 리뷰 1개 조회
   @GetMapping("/{reviewId}")
   public ResponseEntity<ReviewResponse> getReview(@PathVariable Long reviewId) {
@@ -75,14 +83,6 @@ public class ReviewController {
       @RequestParam(defaultValue = "20") int size) {
 
     return ResponseEntity.ok(reviewService.getReviewsByFilter(filterId, page, size));
-  }
-
-  // ✅ 내가 작성한 리뷰 목록 조회 (아카이브용) : 20개씩 페이징
-  @GetMapping("/my")
-  public ResponseEntity<Page<ReviewResponse>> getMyReviews(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(reviewService.getMyReviews(page, size));
   }
 
   // 리뷰 삭제
