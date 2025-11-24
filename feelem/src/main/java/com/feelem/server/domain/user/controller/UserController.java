@@ -8,6 +8,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -97,5 +98,15 @@ public class UserController {
 
     return ResponseEntity.ok().build();
   }
+
+  // 계정 삭제
+//  @DeleteMapping("/delete")
+//  public ResponseEntity<Void> deleteUserAccount() {
+//    userService.deleteAccount();
+//
+//    log.info("🗑️ 사용자 계정이 삭제되었습니다.");
+//
+//    return ResponseEntity.noContent().build();
+//  }
 
 }

@@ -42,10 +42,23 @@ public class FilterController {
   // ---------------------------------------------------------
   @GetMapping("/{filterId}")
   public ResponseEntity<FilterResponse> getFilter(@PathVariable Long filterId) {
+    FilterResponse response = filterService.getFilter(filterId);
 
     log.info("✔️ 필터가 조회되었습니다: filterId={}", filterId);
 
-    return ResponseEntity.ok(filterService.getFilter(filterId));
+    // filter response의 모든 정보 로그찍기
+    log.info("    ➕필터id: {}", filterId);
+    log.info("    ➕필터이름: {}",response.getName());
+    log.info("    ➕필터제작자: {}",response.getCreator());
+    log.info("    ➕필터가격: {}",response.getPrice());
+    log.info("    ➕필터태그: {}",response.getTags());
+    log.info("    ➕필터스티커이미지URL: {}",response.getStickerImageNoFaceUrl());
+    log.info("    ➕필터얼굴인식스티커 개수: {}",response.getStickers().size());
+    var stickers = response.getStickers();
+    for (int i = 0; i < stickers.size(); i++) {
+      log.info("        ➕{}번째 얼굴인식 스티커 이미지 경로: {}", i + 1, stickers.get(i).getStickerImageUrl());
+    }
+  return ResponseEntity.ok(response);
   }
 
   // ---------------------------------------------------------

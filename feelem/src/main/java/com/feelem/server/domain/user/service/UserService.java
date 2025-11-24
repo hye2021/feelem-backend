@@ -93,6 +93,7 @@ public class UserService {
     return newTokenInfo;
   }
 
+
   // 닉네임 설정 혹은 변경
   @Transactional
   public User updateNickname(String newNickname) {

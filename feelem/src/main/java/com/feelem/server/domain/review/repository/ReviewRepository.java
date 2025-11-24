@@ -11,4 +11,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
   Page<Review> findAllByFilterOrderByCreatedAtDesc(Filter filter, Pageable pageable);
 
   List<Review> findTop5ByFilterOrderByCreatedAtDesc(Filter filter);
+
+  // User가 작성한 리뷰 최신순 조회
+  Page<Review> findAllByReviewerIdOrderByCreatedAtDesc(Long reviewerId, Pageable pageable);
 }

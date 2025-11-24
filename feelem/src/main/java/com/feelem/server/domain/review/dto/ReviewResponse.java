@@ -16,7 +16,7 @@ public class ReviewResponse {
   private Long id;
   private String imageUrl;
   private String reviewerNickname;
-  private String socialType;   // 대표 소셜 종류
+  private String socialType;   // NONE, INSTAGRAM, X
   private String socialValue;  // 대표 소셜 ID 값
   private LocalDateTime createdAt;
 

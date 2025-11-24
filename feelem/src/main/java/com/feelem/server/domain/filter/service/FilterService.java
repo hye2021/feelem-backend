@@ -65,6 +65,18 @@ public class FilterService {
   // 1) 필터 생성
   // ================================================================
   public Filter createFilter(FilterCreateRequest request) {
+    log.info("🚀 [FilterService] createFilter 호출됨");
+
+    // 1. 스티커 리스트 상태 로그 (가장 중요!)
+    if (request.getStickers() == null) {
+      log.error("🚨 [문제발견] request.getStickers()가 NULL입니다! (JSON 필드명 불일치 가능성 높음)");
+    } else {
+      log.info("🔍 [데이터확인] request.getStickers() 크기: {}개", request.getStickers().size());
+      if (request.getStickers().isEmpty()) {
+        log.warn("⚠️ [데이터확인] 리스트는 존재하지만 비어있습니다 (Size=0).");
+      }
+    }
+
     // 제작자
     User creator = userService.getCurrentUser();
     // SNS 종류
@@ -89,6 +101,7 @@ public class FilterService {
         .social(social)
         .build();
     Filter savedFilter = filterRepository.save(filter);
+    log.info("✔️ 필터 기본 정보 저장 완료. ID: {}", savedFilter.getId());
 
     // 태그 등록
     List<String> tagNames = request.getTags();
@@ -104,29 +117,42 @@ public class FilterService {
 
     // 스티커 배치 등록
     List<FaceStickerPlacement> savedStickers = new ArrayList<>();
+
+    // 2. 반복문 진입 로그
     if (request.getStickers() != null && !request.getStickers().isEmpty()) {
+      log.info("🔄 스티커 저장 반복문 진입 (총 {}개)", request.getStickers().size());
+
       for (FaceSticker placement : request.getStickers()) {
-        Sticker sticker = stickerRepository.findById(placement.getStickerId())
-            .orElseThrow(() -> new EntityNotFoundException("Sticker not found"));
+        try {
+          Sticker sticker = stickerRepository.findById(placement.getStickerId())
+              .orElseThrow(() -> new EntityNotFoundException("Sticker not found: " + placement.getStickerId()));
 
-        FaceStickerPlacement facePlacement = new FaceStickerPlacement(
-            savedFilter,
-            sticker,
-            placement.getRelX(),
-            placement.getRelY(),
-            placement.getRelW(),
-            placement.getRelH(),
-            placement.getRot()
-        );
+          FaceStickerPlacement facePlacement = new FaceStickerPlacement(
+              savedFilter,
+              sticker,
+              placement.getRelX(),
+              placement.getRelY(),
+              placement.getRelW(),
+              placement.getRelH(),
+              placement.getRot()
+          );
 
-        faceStickerPlacementRepository.save(facePlacement);
-        savedStickers.add(facePlacement);
+          // 상세 데이터 로그
+          log.info("   💾 스티커 저장 시도 - Sticker ID: {}, relX: {}", placement.getStickerId(), placement.getRelX());
+
+          faceStickerPlacementRepository.save(facePlacement);
+          savedStickers.add(facePlacement);
+
+        } catch (Exception e) {
+          log.error("❌ 스티커 저장 중 에러 발생 (ID: {}): {}", placement.getStickerId(), e.getMessage());
+          throw e; // 트랜잭션 롤백을 위해 예외 다시 던짐
+        }
       }
+    } else {
+      log.info("⏭️ 저장할 스티커가 없어서 반복문을 건너뜁니다.");
     }
 
-    // FastAPI 인덱싱 이벤트 발행
-    // IndexFilterRequest payload = buildIndexRequestPayload(savedFilter, tagNames, savedStickers);
-    // eventPublisher.publishEvent(new FilterIndexedEvent(payload));
+    log.info("✅ 필터 생성 최종 완료. 저장된 스티커 수: {}", savedStickers.size());
 
     return savedFilter;
   }
