@@ -4,6 +4,7 @@ import com.feelem.server.domain.filter.dto.FilterCreateRequest;
 import com.feelem.server.domain.filter.dto.FilterCreateRequest.FaceSticker;
 import com.feelem.server.domain.filter.dto.FilterResponse;
 import com.feelem.server.domain.filter.dto.FilterResponse.FaceStickerResponse;
+import com.feelem.server.domain.filter.dto.PriceDisplayType;
 import com.feelem.server.domain.filter.entity.Bookmark;
 import com.feelem.server.domain.filter.repository.BookmarkRepository;
 import com.feelem.server.domain.filter.dto.FilterListResponse;
@@ -315,6 +316,7 @@ public class FilterService {
     bookmarkRepository.delete(bookmark);
   }
 
+  // 북마크한 필터 목록 조회 (페이징)
   @Transactional(readOnly = true)
   public Page<FilterListResponse> getBookmarkedFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
@@ -323,7 +325,8 @@ public class FilterService {
 
     return page.map(filter -> {
       boolean usage = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filter.getId());
-      return FilterListResponse.from(filter, usage, true);
+      PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
+      return FilterListResponse.from(filter, type, true);
     });
   }
 
@@ -334,7 +337,9 @@ public class FilterService {
   private FilterListResponse toFilterListResponse(Filter filter, User user) {
     boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
     boolean usage = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filter.getId());
-    return FilterListResponse.from(filter, usage, bookmark);
+    PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
+
+    return FilterListResponse.from(filter, type, bookmark);
   }
 
 
@@ -430,7 +435,10 @@ public class FilterService {
     return page.map(filter -> {
       boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
       boolean usage = true; // 이미 구매/사용한 목록이므로 true
-      return FilterListResponse.from(filter, usage, bookmark);
+
+      PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
+
+      return FilterListResponse.from(filter, type, bookmark);
     });
   }
 

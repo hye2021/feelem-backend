@@ -14,11 +14,12 @@ public class FilterListResponse {
   private String creator;
   private int pricePoint;
   private Long useCount;
-  private boolean usage; // 구매 여부
+  // private boolean usage; // 구매 여부
+  private String priceDisplayType; // 가격 표시 유형: NONE, PURCHASED, NUMBER
   private boolean bookmark; // 북마크 여부
 
 
-  public static FilterListResponse from(Filter filter, boolean usage, boolean bookmark) {
+  public static FilterListResponse from(Filter filter, PriceDisplayType type, boolean bookmark) {
     return FilterListResponse.builder()
         .id(filter.getId())
         .name(filter.getName())
@@ -26,7 +27,7 @@ public class FilterListResponse {
         .creator(filter.getCreator().getNickname())
         .pricePoint(filter.getPrice())
         .useCount(filter.getUseCount())
-        .usage(usage)
+        .priceDisplayType(type.toString())
         .bookmark(bookmark)
         .build();
   }

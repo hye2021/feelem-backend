@@ -1,5 +1,6 @@
 package com.feelem.server.recommend.controller;
 
+import com.feelem.server.domain.filter.dto.PriceDisplayType;
 import com.feelem.server.domain.filter.entity.Filter; // [변경] Filter 엔티티 Import
 import com.feelem.server.domain.filter.service.FilterService;
 import com.feelem.server.domain.filter.dto.FilterListResponse; // [변경] 사용자 DTO Import
@@ -83,7 +84,7 @@ public class RecommendController {
       return longIds.stream()
           .map(filterMap::get) // ID 순서대로 Filter 객체를 찾음
           .filter(java.util.Objects::nonNull) // (혹시 삭제된 필터가 있으면 null)
-          .map(filter -> FilterListResponse.from(filter, false, false)) // 사용자 DTO로 변환
+          .map(filter -> FilterListResponse.from(filter, PriceDisplayType.NONE, false)) // 사용자 DTO로 변환
           .collect(Collectors.toList());
     });
   }

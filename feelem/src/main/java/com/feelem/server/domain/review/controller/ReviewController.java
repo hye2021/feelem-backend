@@ -1,5 +1,6 @@
 package com.feelem.server.domain.review.controller;
 
+import com.feelem.server.domain.review.dto.MyReviewResponse;
 import com.feelem.server.domain.review.dto.ReviewResponse;
 import com.feelem.server.domain.review.service.ReviewService;
 import com.feelem.server.domain.upload.service.UploadService;
@@ -47,7 +48,7 @@ public class ReviewController {
 
   // ✅ 내가 작성한 리뷰 목록 조회 (아카이브용) : 20개씩 페이징
   @GetMapping("/my")
-  public ResponseEntity<Page<ReviewResponse>> getMyReviews(
+  public ResponseEntity<Page<MyReviewResponse>> getMyReviews(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
     return ResponseEntity.ok(reviewService.getMyReviews(page, size));

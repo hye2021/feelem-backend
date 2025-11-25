@@ -1,7 +1,10 @@
 package com.feelem.server.domain.review.service;
 
+import com.feelem.server.domain.filter.dto.PriceDisplayType;
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.filter.repository.FilterRepository;
+import com.feelem.server.domain.finance.repository.FilterTransactionRepository;
+import com.feelem.server.domain.review.dto.MyReviewResponse;
 import com.feelem.server.domain.review.dto.ReviewResponse;
 import com.feelem.server.domain.review.entity.Review;
 import com.feelem.server.domain.review.repository.ReviewRepository;
@@ -29,6 +32,7 @@ public class ReviewService {
   private final UserRepository userRepository;
   private final SocialRepository socialRepository;
   private final UserService userService;
+  private final FilterTransactionRepository filterTransactionRepository;
 
   // ✅ 리뷰 생성
   @Transactional
@@ -98,13 +102,18 @@ public class ReviewService {
 
   // ✅ 내가 작성한 리뷰 목록 조회 (페이징)
   @Transactional(readOnly = true)
-  public Page<ReviewResponse> getMyReviews(int page, int size) {
+  public Page<MyReviewResponse> getMyReviews(int page, int size) {
     Long currentUserId = userService.getCurrentUser().getId();
     PageRequest pageable = PageRequest.of(page, size);
 
     Page<Review> reviews = reviewRepository.findAllByReviewerIdOrderByCreatedAtDesc(currentUserId, pageable);
 
-    return reviews.map(review -> ReviewResponse.fromEntity(review, true));
+    return reviews.map(review -> {
+      Filter filter = review.getFilter();
+      boolean usage = filterTransactionRepository.existsByBuyerIdAndFilterId(currentUserId, filter.getId());
+      PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
+      return MyReviewResponse.fromEntity(review, filter, type);
+    });
   }
 
   // ✅ 리뷰 미리보기 5개
