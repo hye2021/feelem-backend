@@ -57,6 +57,19 @@ public class FilterListController {
   }
 
   // ---------------------------------------------------------
+  // 🔥 홈 화면 필터 랜덤 조회
+  // ---------------------------------------------------------
+  @GetMapping("/random")
+  public ResponseEntity<Page<FilterListResponse>> getRandomFilters(
+      @PageableDefault(size = 20) Pageable pageable
+  ) {
+    log.info("✔️ 홈 화면용 랜덤 필터 조회: page={}, size={}",
+        pageable.getPageNumber(), pageable.getPageSize());
+
+    return ResponseEntity.ok(filterService.getRandomFilters(pageable));
+  }
+
+  // ---------------------------------------------------------
   // 2) 북마크 목록 조회
   // ---------------------------------------------------------
   @GetMapping("/bookmarks")

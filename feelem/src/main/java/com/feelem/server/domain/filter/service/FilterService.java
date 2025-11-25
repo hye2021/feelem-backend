@@ -235,10 +235,7 @@ public class FilterService {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderByCreatedAtDesc(pageable);
 
-    // 반한된 리스트 로그 찍기
-    for (Filter filter : page.getContent()) {
-      log.info("➡️ Recent Filter ID: {}, Created At: {}", filter.getId(), filter.getCreatedAt());
-    }
+    log.info("➡️ 홈화면 - 최신 필터 조회");
 
     return page.map(filter -> toFilterListResponse(filter, user));
   }
@@ -249,10 +246,18 @@ public class FilterService {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderBySaveCountDesc(pageable);
 
-    // 반한된 리스트 로그 찍기
-    for (Filter filter : page.getContent()) {
-      log.info("➡️ Hot Filter ID: {}, Save Count: {}", filter.getId(), filter.getSaveCount());
-    }
+    log.info("➡️ 홈화면 - 인기 필터 조회");
+
+    return page.map(filter -> toFilterListResponse(filter, user));
+  }
+
+  /** 홈 화면용 - 완전 랜덤 필터 페이징 조회 */
+  @Transactional(readOnly = true)
+  public Page<FilterListResponse> getRandomFilters(Pageable pageable) {
+    User user = userService.getCurrentUser();
+    Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderByRandom(pageable);
+    
+    log.info("➡️ 홈화면 - 랜덤 필터 조회");
 
     return page.map(filter -> toFilterListResponse(filter, user));
   }
