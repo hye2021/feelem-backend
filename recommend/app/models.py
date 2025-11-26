@@ -16,14 +16,17 @@ class SearchResponse(BaseModel):
 
 
 class StickerSummary(BaseModel):
-    count: int
-    placement_types: List[str]
-    sticker_types: List[str]
+    count: int  # 얼굴 인식 스티커 개수
+    placement_types: List[
+        str
+    ]  # 얼굴 인식 스티커 배치 위치 (예: "LEFT_EYE", "TOP_HEAD")
+    has_face_sticker: bool  # 얼굴 인식 스티커 사용 여부 (True/False)
+    # sticker_types: List[str]  <-- 삭제됨
 
 
 class IndexFilterRequest(BaseModel):
-    filter_id: str  # 예: "1235" (Chroma DB는 ID가 문자열)
-    image_url: str  # S3의 'editedImageUrl'
+    filter_id: str
+    image_url: str
     tags: List[str] = []
     color_adjustments: Dict[str, float] = {}
     sticker_summary: Optional[StickerSummary] = None

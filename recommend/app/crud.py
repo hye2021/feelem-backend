@@ -79,30 +79,43 @@ async def get_ranked_home_recs(
 
 
 # ----------------------------
-# ✅ 텍스트 검색 (리스트 입력 + [0] 추출)
+# ✅ 텍스트 검색 (리스트 입력 + [0] 추출) - 페이징 최적화 적용됨
 # ----------------------------
 async def get_text_search_results(request: Request, query: str, page: int) -> List[str]:
     model = request.app.state.clip_model
     chroma_collection = request.app.state.chroma_collection
+
+    # 1. 최대 검색 개수 제한 (Config의 PRIMARY_QUERY_COUNT, 예: 200)
+    max_limit = settings.PRIMARY_QUERY_COUNT
+    start = page * settings.PAGE_SIZE
+    end = start + settings.PAGE_SIZE
+
+    # 2. 요청한 페이지의 시작점이 제한(200개)을 넘으면 검색하지 않고 빈 리스트 반환
+    # (불필요한 DB 조회 및 연산 방지)
+    if start >= max_limit:
+        return []
+
     try:
         # 멀티링구얼 ST 모델: 리스트 입력 후 첫 벡터만 사용
         text_vec = await run_in_threadpool(
             lambda: model.encode(sentences=[query], convert_to_numpy=True)[0].tolist()
         )
 
-        # Chroma에는 offset 인자 없음 → 넉넉히 받아서 슬라이싱
+        # 3. ChromaDB 조회: 페이지가 늘어나도 항상 max_limit(200개)까지만 조회
+        # (기존 코드: settings.PAGE_SIZE * (page + 1) -> 페이지 갈수록 계속 늘어남 문제 해결)
         results = await run_in_threadpool(
             chroma_collection.query,
             query_embeddings=[text_vec],
-            n_results=settings.PAGE_SIZE * (page + 1),
+            n_results=max_limit,
         )
+
         ids = results.get("ids", [[]])[0]
         if not ids:
             return []
 
-        start = page * settings.PAGE_SIZE
-        end = start + settings.PAGE_SIZE
+        # 4. 메모리 상에서 슬라이싱하여 해당 페이지 분량만 반환
         return ids[start:end]
+
     except Exception as e:
         print(f"❌ Error during text search: {e}")
         raise HTTPException(status_code=500, detail="Text search failed.")

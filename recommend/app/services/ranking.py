@@ -8,63 +8,52 @@ from typing import List
 
 
 def _jaccard_similarity(list1: List[str], list2: List[str]) -> float:
-    """
-    [추가] 두 리스트 간의 자카드 유사도를 계산합니다.
-    (교집합의 크기) / (합집합의 크기)
-    """
+    # (기존과 동일)
     set1 = set(list1)
     set2 = set(list2)
-
     intersection = set1.intersection(set2)
     union = set1.union(set2)
-
     if not union:
-        return 1.0  # 두 리스트가 모두 비어있으면 100% 일치
-
+        return 1.0
     return len(intersection) / len(union)
 
 
 def calculate_sticker_similarity(profile1: dict, profile2: dict) -> float:
     """
-    [수정] 두 필터의 스티커 메타데이터를 비교하여 유사도(0.0 ~ 1.0)를 반환합니다.
-    - 배치 방식 유사도 (50%)
-    - 스티커 종류 유사도 (30%)
-    - 스티커 개수 유사도 (20%)
+    [수정] 얼굴 인식 스티커 기반 유사도 계산
+    1. 배치 유사도 (60%)
+    2. 사용 여부 일치 (20%)
+    3. 개수 유사도 (20%)
     """
     try:
-        # 프로필 기본값 설정
-        p1 = {
-            "count": profile1.get("count", 0),
-            "placement_types": profile1.get("placement_types", []),
-            "sticker_types": profile1.get("sticker_types", []),
-        }
-        p2 = {
-            "count": profile2.get("count", 0),
-            "placement_types": profile2.get("placement_types", []),
-            "sticker_types": profile2.get("sticker_types", []),
-        }
-
-        # 1. 배치 방식 유사도 (가중치 50%)
+        # 1. 배치 유사도 (Placement) - 가중치 60%
+        # (얼굴의 어느 부위에 붙였는지가 스타일을 결정함)
         placement_score = _jaccard_similarity(
-            p1["placement_types"], p2["placement_types"]
+            profile1.get("placement_types", []), profile2.get("placement_types", [])
         )
 
-        # 2. 스티커 종류 유사도 (가중치 30%)
-        type_score = _jaccard_similarity(p1["sticker_types"], p2["sticker_types"])
+        # 2. 사용 여부 일치 (Boolean) - 가중치 20%
+        # 둘 다 True거나 둘 다 False면 1.0, 다르면 0.0
+        has_face1 = profile1.get("has_face_sticker", False)
+        has_face2 = profile2.get("has_face_sticker", False)
 
-        # 3. 스티커 개수 유사도 (가중치 20%)
-        # (차이가 0이면 1.0, 차이가 5개 이상이면 0.0)
-        count_diff = abs(p1["count"] - p2["count"])
-        count_score = max(0.0, 1.0 - (count_diff / 5.0))
+        presence_score = 1.0 if has_face1 == has_face2 else 0.0
 
-        # 4. 최종 가중 평균
+        # 3. 개수 유사도 (Count) - 가중치 20%
+        c1 = profile1.get("count", 0)
+        c2 = profile2.get("count", 0)
+        count_diff = abs(c1 - c2)
+        count_score = max(0.0, 1.0 - (count_diff / 5.0))  # 5개 이상 차이나면 0점
+
+        # 최종 가중 평균
         final_similarity = (
-            (placement_score * 0.5) + (type_score * 0.3) + (count_score * 0.2)
+            (placement_score * 0.6) + (presence_score * 0.2) + (count_score * 0.2)
         )
+
         return final_similarity
 
     except Exception:
-        return 0.0  # 예외 발생 시 유사도 0
+        return 0.0
 
 
 def re_rank_candidates(input_metadatas: List[dict], candidates: dict) -> List[str]:
