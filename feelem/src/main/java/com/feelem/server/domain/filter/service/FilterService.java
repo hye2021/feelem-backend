@@ -29,7 +29,12 @@ import com.feelem.server.domain.user.entity.SocialType;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.PointRepository;
 import com.feelem.server.domain.user.service.UserService;
+import com.feelem.server.recommend.FilterRecommendMapper;
+import com.feelem.server.recommend.RecommendServingClient;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +59,6 @@ public class FilterService {
   private final StickerRepository stickerRepository;
   private final TagRepository tagRepository;
   private final FilterTagRepository filterTagRepository;
-//  private final FilterStickerRepository filterStickerRepository;
   private final BookmarkRepository bookmarkRepository;
   private final FilterTransactionRepository filterTransactionRepository;
   private final ApplicationEventPublisher eventPublisher;
@@ -62,9 +66,11 @@ public class FilterService {
   private final FaceStickerPlacementRepository faceStickerPlacementRepository;
   private final FilterTransactionRepository filterTransactionRepo;
 
-  // ================================================================
-  // 1) 필터 생성
-  // ================================================================
+  // AI recommend 서버 연동을 위한 의존성
+  private final FilterRecommendMapper aiMapper;
+  private final RecommendServingClient aiClient;
+
+  /** 필터 생성*/
   public Filter createFilter(FilterCreateRequest request) {
     log.info("🚀 [FilterService] createFilter 호출됨");
 
@@ -155,41 +161,19 @@ public class FilterService {
 
     log.info("✅ 필터 생성 최종 완료. 저장된 스티커 수: {}", savedStickers.size());
 
+    // AI 추천 서버에 인덱싱 요청
+    try {
+      aiClient.indexFilter(aiMapper.toIndexRequest(savedFilter));
+      log.info("🤖 AI Server Indexing Requested for Filter ID: {}", savedFilter.getId());
+    } catch (Exception e) {
+      // AI 서버가 죽어있어도 필터 생성 자체는 성공해야 하므로 에러 로그만 남김
+      log.warn("⚠️ AI Indexing Failed: {}", e.getMessage());
+    }
+
     return savedFilter;
   }
 
-  /** 인덱싱 요청 Payload 생성 */
-//  private IndexFilterRequest buildIndexRequestPayload(Filter filter, List<String> tagNames, List<FilterSticker> stickers) {
-//
-//    List<String> placementTypes = stickers.stream()
-//        .map(fs -> fs.getPlacementType().name())
-//        .distinct()
-//        .collect(Collectors.toList());
-//
-//    List<String> stickerTypes = stickers.stream()
-//        .map(fs -> fs.getSticker().getStickerType().name())
-//        .distinct()
-//        .collect(Collectors.toList());
-//
-//    StickerSummary summary = new StickerSummary(
-//        stickers.size(),
-//        placementTypes,
-//        stickerTypes
-//    );
-//
-//    return new IndexFilterRequest(
-//        String.valueOf(filter.getId()),
-//        filter.getEditedImageUrl(),
-//        tagNames,
-//        filter.getColorAdjustments(),
-//        summary
-//    );
-//  }
-
-
-  // ================================================================
-  // 2) 필터 조회 (상세)
-  // ================================================================
+  /** 필터 조회*/
   @Transactional(readOnly = true)
   public FilterResponse getFilter(Long filterId) {
     Filter filter = filterRepository.findByIdAndIsDeletedFalse(filterId)
@@ -222,13 +206,96 @@ public class FilterService {
     return new FilterResponse(filter, isMine, isUsed, isBookmarked, tags, stickers);
   }
 
-
+  /** 필터 엔티티 조회 헬퍼 */
   @Transactional(readOnly = true)
   public Filter findById(Long filterId) {
     return filterRepository.findByIdAndIsDeletedFalse(filterId)
         .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
   }
 
+  /** 헬퍼 메소드: ID 리스트 순서대로 객체 정렬*/
+  // JPA의 findAllById는 입력된 ID 순서대로 결과를 반환한다는 보장이 없음
+  // 따라서 AI가 애써 계산한 랭킹(추천 순위)이 DB 조회 과정에서 섞이는 것을 막기 위해
+  // 자바 단에서 순서를 강제로 맞추는 작업이 필수!
+  private List<Filter> sortByIdListOrder(List<Filter> filters, List<String> targetIdOrder) {
+    var filterMap = filters.stream()
+        .collect(Collectors.toMap(f -> String.valueOf(f.getId()), Function.identity()));
+
+    return targetIdOrder.stream()
+        .filter(filterMap::containsKey)
+        .map(filterMap::get)
+        .collect(Collectors.toList());
+  }
+
+  /** 추천 기반 검색 및 정렬*/
+  @Transactional(readOnly = true)
+  public List<FilterListResponse> searchFilters(String query, String sortType, int page) {
+    User user = userService.getCurrentUser(); // 👈 유저 조회
+
+    // 1. AI 서버 검색
+    List<String> searchIds = aiClient.getSearchResults(query, page);
+
+    if (searchIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    // 2. DB 조회
+    List<Filter> filters = filterRepository.findAllById(
+        searchIds.stream().map(Long::parseLong).toList()
+    );
+
+    // 3. 정렬 로직
+    List<Filter> sortedFilters;
+    switch (sortType) {
+      case "LOW_PRICE" -> sortedFilters = filters.stream()
+          .sorted(Comparator.comparing(Filter::getPrice))
+          .collect(Collectors.toList());
+
+      case "POPULARITY" -> sortedFilters = filters.stream()
+          .sorted(Comparator.comparing(Filter::getUseCount).reversed())
+          .collect(Collectors.toList());
+
+      case "ACCURACY" -> sortedFilters = sortByIdListOrder(filters, searchIds);
+
+      default -> sortedFilters = sortByIdListOrder(filters, searchIds);
+    }
+
+    // 4. DTO 변환
+    return sortedFilters.stream()
+        .map(f -> toFilterListResponse(f, user)) // 👈 진짜 유저 넘김
+        .collect(Collectors.toList());
+  }
+
+  /** 홈 화면 용 - 추천 필터 페이징 조회*/
+  @Transactional(readOnly = true)
+  public List<FilterListResponse> getHomeRecommendations(Pageable pageable) {
+    // 1. 유저 조회 (로그인 필수이므로 예외 발생 시점은 앞단 Filter나 UserService 내부)
+    User user = userService.getCurrentUser();
+    int page = pageable.getPageNumber();
+
+    // 2. 유저의 선호 필터 ID 조회 (필요 시 구현, 지금은 빈 리스트)
+    // List<String> likedFilterIds = bookmarkRepository.findRecentLikedIds(user.getId());
+    List<String> likedFilterIds = Collections.emptyList();
+
+    // 3. AI 서버 요청
+    List<String> recommendedIds = aiClient.getHomeRecommendations(likedFilterIds, page);
+
+    // 4. 결과가 없으면(AI 장애 or 데이터 부족) -> 기존 최신순 Fallback
+    if (recommendedIds.isEmpty()) {
+      log.info("⚠️ AI 추천 결과 없음 -> 최신순 Fallback");
+      return getRecentFilters(pageable).getContent();
+    }
+
+    // 5. DB 조회
+    List<Long> ids = recommendedIds.stream().map(Long::parseLong).toList();
+    List<Filter> filters = filterRepository.findAllById(ids);
+
+    // 6. 정렬 및 DTO 변환 (Real User 사용)
+    return sortByIdListOrder(filters, recommendedIds).stream()
+        .map(f -> toFilterListResponse(f, user)) // 👈 진짜 유저 넘김
+        .collect(Collectors.toList());
+  }
+  
   /** 홈 화면용 - 최신 등록 필터 페이징 조회 */
   @Transactional(readOnly = true)
   public Page<FilterListResponse> getRecentFilters(Pageable pageable) {
@@ -262,7 +329,7 @@ public class FilterService {
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
-  /** 아카이브- 내가 올린 필터 목록 조회 */
+  /** 아카이브- 내가 제작한 필터 목록 조회 */
   @Transactional(readOnly = true)
   public Page<FilterListResponse> getMyFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
@@ -271,9 +338,24 @@ public class FilterService {
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
-  // ================================================================
-  // 3) 북마크 기능 (BookmarkService → FilterService로 통합)
-  // ================================================================
+  /** 아카이브- 내가 사용 & 구매한 필터 목록 조회 */
+  @Transactional(readOnly = true)
+  public Page<FilterListResponse> getUsedFilters(Pageable pageable) {
+    User user = userService.getCurrentUser();
+
+    Page<Filter> page = filterTransactionRepository.findUsedOrPurchasedFilters(user.getId(), pageable);
+
+    return page.map(filter -> {
+      boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
+      boolean usage = true; // 이미 구매/사용한 목록이므로 true
+
+      PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
+
+      return FilterListResponse.from(filter, type, bookmark);
+    });
+  }
+
+  /** 북마크 토글*/
   @Transactional
   public void toggleBookmark(Long filterId) {
     User user = userService.getCurrentUser();
@@ -290,6 +372,7 @@ public class FilterService {
     }
   }
 
+  /** 북마크 임?*/
   @Transactional(readOnly = true)
   public boolean isBookmarked(Long filterId) {
     User user = userService.getCurrentUser();
@@ -297,7 +380,7 @@ public class FilterService {
     return bookmarkRepository.existsByUserAndFilter(user, filter);
   }
 
-
+  /** 북마크 추가*/
   @Transactional
   public void addBookmark(Long filterId) {
     User user = userService.getCurrentUser();
@@ -310,6 +393,7 @@ public class FilterService {
     bookmarkRepository.save(new Bookmark(user, filter));
   }
 
+  /** 북마크 제거*/
   @Transactional
   public void removeBookmark(Long filterId) {
     User user = userService.getCurrentUser();
@@ -321,7 +405,7 @@ public class FilterService {
     bookmarkRepository.delete(bookmark);
   }
 
-  // 북마크한 필터 목록 조회 (페이징)
+  /** 북마크한 필터 목록 조회 */
   @Transactional(readOnly = true)
   public Page<FilterListResponse> getBookmarkedFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
@@ -335,10 +419,7 @@ public class FilterService {
     });
   }
 
-
-  // ================================================================
-  // 4) 공통 변환 메서드 (Filter → FilterListResponse)
-  // ================================================================
+  /** Filter -> FilterListResponse 변환 헬퍼 */
   private FilterListResponse toFilterListResponse(Filter filter, User user) {
     boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
     boolean usage = filterTransactionRepository.existsByBuyerIdAndFilterId(user.getId(), filter.getId());
@@ -347,16 +428,13 @@ public class FilterService {
     return FilterListResponse.from(filter, type, bookmark);
   }
 
-
-  // ================================================================
-  // 5) 기타 기능
-  // ================================================================
   @Transactional(readOnly = true)
   public List<Filter> getFiltersByIds(List<Long> ids) {
     if (ids == null || ids.isEmpty()) return List.of();
     return filterRepository.findFiltersWithCreatorByIdIn(ids);
   }
 
+  /** 필터 가격 수정 */
   public Filter updatePrice(Long filterId, Integer newPrice) {
     Filter filter = filterRepository.findById(filterId)
         .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
@@ -364,15 +442,22 @@ public class FilterService {
     return filterRepository.save(filter);
   }
 
+  /** 필터 삭제 (소프트 딜리트) */
   public void deleteFilter(Long filterId) {
     Filter filter = filterRepository.findById(filterId)
         .orElseThrow(() -> new EntityNotFoundException("Filter not found"));
     filter.softDelete();
+
+    // AI 추천 서버에 삭제 요청
+    try {
+      aiClient.deleteFilter(filterId);
+      log.info("🤖 AI Server Deletion Requested for Filter ID: {}", filterId);
+    } catch (Exception e) {
+      log.warn("⚠️ AI Deletion Failed: {}", e.getMessage());
+    }
   }
 
-  // ================================================================
-  // 6) 필터 구매, 사용 기능
-  // ================================================================
+  /** 필터 사용 & 구매 처리 */
   @Transactional
   public void useFilter(Long filterId) {
     FilterTransaction transaction;
@@ -430,21 +515,5 @@ public class FilterService {
 
     filterTransactionRepository.save(transaction);
   }
-
-  @Transactional(readOnly = true)
-  public Page<FilterListResponse> getUsedFilters(Pageable pageable) {
-    User user = userService.getCurrentUser();
-
-    Page<Filter> page = filterTransactionRepository.findUsedOrPurchasedFilters(user.getId(), pageable);
-
-    return page.map(filter -> {
-      boolean bookmark = bookmarkRepository.existsByUserAndFilter(user, filter);
-      boolean usage = true; // 이미 구매/사용한 목록이므로 true
-
-      PriceDisplayType type = PriceDisplayType.getType(usage, filter.getPrice());
-
-      return FilterListResponse.from(filter, type, bookmark);
-    });
-  }
-
+  
 }
