@@ -4,7 +4,9 @@ import com.feelem.server.domain.filter.dto.FilterCreateRequest;
 import com.feelem.server.domain.filter.dto.FilterCreateRequest.FaceSticker;
 import com.feelem.server.domain.filter.dto.FilterResponse;
 import com.feelem.server.domain.filter.dto.FilterResponse.FaceStickerResponse;
+import com.feelem.server.domain.filter.dto.FilterSortType;
 import com.feelem.server.domain.filter.dto.PriceDisplayType;
+import com.feelem.server.domain.filter.dto.SearchType;
 import com.feelem.server.domain.filter.entity.Bookmark;
 import com.feelem.server.domain.filter.repository.BookmarkRepository;
 import com.feelem.server.domain.filter.dto.FilterListResponse;
@@ -35,6 +37,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -229,40 +232,116 @@ public class FilterService {
 
   /** 추천 기반 검색 및 정렬*/
   @Transactional(readOnly = true)
-  public List<FilterListResponse> searchFilters(String query, String sortType, int page) {
-    User user = userService.getCurrentUser(); // 👈 유저 조회
+  public List<FilterListResponse> searchFilters(
+      String query,            // 검색어 (태그 리스트 or 자연어)
+      SearchType searchType,   // TAG or NL
+      FilterSortType sortType, // 정렬 기준
+      Pageable pageable
+  ) {
+    User user = userService.getCurrentUser();
 
-    // 1. AI 서버 검색
-    List<String> searchIds = aiClient.getSearchResults(query, page);
+    // 결과 담을 리스트
+    List<Filter> filters = new ArrayList<>();
 
-    if (searchIds.isEmpty()) {
+    // ======================================================
+    // 1. 검색 타입에 따른 분기 처리
+    // ======================================================
+    if (searchType == SearchType.TAG) {
+      // [태그 검색] 쿼리 문자열을 콤마(,) 등으로 파싱한다고 가정 (또는 List<String>으로 받기)
+      // 여기서는 편의상 query가 "태그1,태그2" 형태로 온다고 가정하고 분리합니다.
+      // Controller에서 List<String>으로 받았다면 바로 넘기면 됩니다.
+      List<String> tags = List.of(query.split(","));
+
+      // DB에서 태그 모두 포함하는 필터 조회
+      filters = filterRepository.findByTagsContainingAll(tags, (long) tags.size());
+
+    } else {
+      // [자연어 검색] AI 서버 요청
+      // ✅ 무한 루프 페이징 로직 적용
+      int limit = 200; // AI 서버 최대 제공 개수
+      int pageSize = pageable.getPageSize();
+      int maxPages = (int) Math.ceil((double) limit / pageSize); // 예: 200/20 = 10페이지
+
+      int requestPage = pageable.getPageNumber();
+      int aiRequestPage = requestPage;
+
+      // 요청 페이지가 200개를 넘어가면 -> 나머지 연산으로 페이지 순환 (0, 1, ... 9, 0, 1 ...)
+      if (requestPage >= maxPages) {
+        aiRequestPage = requestPage % maxPages;
+      }
+
+      // AI 서버 검색 (루프 적용된 페이지 번호 전달)
+      List<String> searchIds = aiClient.getSearchResults(query, aiRequestPage);
+
+      if (!searchIds.isEmpty()) {
+        List<Long> ids = searchIds.stream().map(Long::parseLong).toList();
+        filters = filterRepository.findAllById(ids);
+
+        // 자연어 검색이면서 '추천순'일 경우에만 AI 순서를 유지하기 위해 별도 처리
+        if (sortType == FilterSortType.ACCURACY) {
+          filters = sortByIdListOrder(filters, searchIds);
+        }
+      }
+    }
+
+    if (filters.isEmpty()) {
       return Collections.emptyList();
     }
 
-    // 2. DB 조회
-    List<Filter> filters = filterRepository.findAllById(
-        searchIds.stream().map(Long::parseLong).toList()
-    );
+    // ======================================================
+    // 2. 정렬 로직 (메모리 정렬)
+    // ======================================================
+    // * 태그 검색은 DB 페이징이 효율적이나, 'AND 조건' 쿼리가 복잡하므로
+    //   일단 다 가져와서(fetch) 메모리 정렬 후 페이징하는 방식이 구현 난이도가 낮습니다.
+    // * 데이터가 수만 건 이상이면 QueryDSL 동적 정렬로 변경해야 합니다.
 
-    // 3. 정렬 로직
-    List<Filter> sortedFilters;
+    Stream<Filter> stream = filters.stream();
+
     switch (sortType) {
-      case "LOW_PRICE" -> sortedFilters = filters.stream()
-          .sorted(Comparator.comparing(Filter::getPrice))
-          .collect(Collectors.toList());
+      case ACCURACY -> {
+        // 자연어 검색일 때만 유효. 이미 위에서 정렬했으므로 Pass.
+        // 태그 검색에서 ACCURACY가 들어오면 기본값(최신순 or 인기순)으로 처리
+        if (searchType == SearchType.TAG) {
+          stream = stream.sorted(Comparator.comparing(Filter::getCreatedAt).reversed());
+        }
+      }
+      case POPULARITY -> // 저장(Save) 수 기준 내림차순
+          stream = stream.sorted(Comparator.comparing(Filter::getSaveCount).reversed());
 
-      case "POPULARITY" -> sortedFilters = filters.stream()
-          .sorted(Comparator.comparing(Filter::getUseCount).reversed())
-          .collect(Collectors.toList());
+      case LATEST -> // 최신 등록순
+          stream = stream.sorted(Comparator.comparing(Filter::getCreatedAt).reversed());
 
-      case "ACCURACY" -> sortedFilters = sortByIdListOrder(filters, searchIds);
+      case LOW_PRICE -> // 낮은 가격순 (오름차순)
+          stream = stream.sorted(Comparator.comparing(Filter::getPrice));
 
-      default -> sortedFilters = sortByIdListOrder(filters, searchIds);
+      case REVIEW_COUNT -> {
+        // 리뷰 수 내림차순 (Filter 엔티티에 getReviewCount 메소드가 있다고 가정)
+        // 없다면: reviews.size() 사용. reviews가 Lazy Loading이면 @BatchSize 필요
+        stream = stream.sorted(Comparator.comparing(Filter::getUseCount).reversed()); // (임시: 리뷰필드 없어서 사용수로 대체)
+        // stream = stream.sorted((f1, f2) -> Integer.compare(f2.getReviews().size(), f1.getReviews().size()));
+      }
+    }
+
+    List<Filter> sortedFilters = stream.collect(Collectors.toList());
+
+    // ======================================================
+    // 3. 태그 검색일 경우 페이징 처리 (수동)
+    // ======================================================
+    // 자연어 검색은 이미 AI가 페이징된 ID를 줬지만,
+    // 태그 검색은 DB에서 통으로 가져왔다면 여기서 잘라줘야 함 (Pagination)
+    if (searchType == SearchType.TAG) {
+      int start = (int) pageable.getOffset();
+      int end = Math.min((start + pageable.getPageSize()), sortedFilters.size());
+
+      if (start > sortedFilters.size()) {
+        return Collections.emptyList();
+      }
+      sortedFilters = sortedFilters.subList(start, end);
     }
 
     // 4. DTO 변환
     return sortedFilters.stream()
-        .map(f -> toFilterListResponse(f, user)) // 👈 진짜 유저 넘김
+        .map(f -> toFilterListResponse(f, user))
         .collect(Collectors.toList());
   }
 
