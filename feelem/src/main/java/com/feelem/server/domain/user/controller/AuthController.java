@@ -38,13 +38,13 @@ public class AuthController {
   // ✅ 안드로이드 Google 로그인
   @PostMapping("/auth/google")
   public ResponseEntity<TokenInfo> googleLogin(@RequestBody Map<String, String> body) throws Exception {
-    log.info("✅ 구글 로그인 요청이 들어왔습니다. 요청 바디: {}", body);
+//    log.info("✅ 구글 로그인 요청이 들어왔습니다. 요청 바디: {}", body);
 
     String idToken = body.get("idToken");
     TokenInfo tokenInfo = authService.loginWithGoogle(idToken);
 
-    log.info("✅ 구글 로그인이 성공되었습니다. idToken: {}", idToken);
-    log.info("✅ 발급된 JWT 정보: {}", tokenInfo);
+    log.info("✅ 구글 로그인이 성공되었습니다.");
+//    log.info("✅ 발급된 JWT 정보: {}", tokenInfo);
 
     return ResponseEntity.ok(tokenInfo);
   }

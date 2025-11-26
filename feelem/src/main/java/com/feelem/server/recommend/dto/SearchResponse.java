@@ -1,4 +1,7 @@
 package com.feelem.server.recommend.dto;
 
 import java.util.List;
-public record SearchResponse(List<String> searchResults) {}
+
+public record SearchResponse(
+    List<String> search_results
+) {}

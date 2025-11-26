@@ -60,3 +60,14 @@ async def admin_index_filter(data: IndexFilterRequest, request: Request):
 async def health_check():
     """ELB TargetGroup Health Check"""
     return {"status": "ok"}
+
+
+@app.delete("/admin/filter/{filter_id}")
+async def delete_filter(filter_id: str, request: Request):
+    try:
+        chroma_collection = request.app.state.chroma_collection
+        # ChromaDB에서 ID로 삭제
+        await run_in_threadpool(chroma_collection.delete, ids=[filter_id])
+        return {"status": "deleted", "filter_id": filter_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

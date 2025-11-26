@@ -51,6 +51,9 @@ public class ReviewController {
   public ResponseEntity<Page<MyReviewResponse>> getMyReviews(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
+
+    log.info("⭐ 내가 작성한 리뷰 목록 조회: page={}, size={}", page, size);
+
     return ResponseEntity.ok(reviewService.getMyReviews(page, size));
   }
 
@@ -82,6 +85,8 @@ public class ReviewController {
       @PathVariable Long filterId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
+
+    log.info("⭐ 필터 리뷰 목록 조회: filterId={}, page={}, size={}", filterId, page, size);
 
     return ResponseEntity.ok(reviewService.getReviewsByFilter(filterId, page, size));
   }
