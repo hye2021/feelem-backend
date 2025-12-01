@@ -83,8 +83,8 @@ public class ReviewService {
   public ReviewResponse getReviewById(Long reviewId) {
     Review review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
-
-    return ReviewResponse.fromEntity(review, isMyReview(reviewId));
+    Long userId = userService.getCurrentUser().getId();
+    return ReviewResponse.fromEntity(review, isMyReview(reviewId, userId));
   }
 
   // ✅ 리뷰 목록 조회 (페이징)
@@ -95,9 +95,13 @@ public class ReviewService {
 
     PageRequest pageable = PageRequest.of(page, size);
     Page<Review> reviews = reviewRepository.findAllByFilterOrderByCreatedAtDesc(filter, pageable);
+    for (Review review : reviews) {
+      log.info("🔍 리뷰 ID: {}, 작성자 ID: {}", review.getId(), review.getReviewer().getId());
+    }
 
+    Long currentUserId = userService.getCurrentUser().getId();
     // 모든 리뷰에 대해 isMine 플래그 설정
-    return reviews.map(review -> ReviewResponse.fromEntity(review, isMyReview(review.getId())));
+    return reviews.map(review -> ReviewResponse.fromEntity(review, isMyReview(review.getId(), currentUserId)));
   }
 
   // ✅ 내가 작성한 리뷰 목록 조회 (페이징)
@@ -123,16 +127,19 @@ public class ReviewService {
         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 필터입니다."));
 
     List<Review> reviews = reviewRepository.findTop5ByFilterOrderByCreatedAtDesc(filter);
+
+    Long currentUserId = userService.getCurrentUser().getId();
     return reviews.stream()
-        .map(review -> ReviewResponse.fromEntity(review, isMyReview(review.getId())))
+        .map(review -> ReviewResponse.fromEntity(review, isMyReview(review.getId(), currentUserId)))
         .toList();
   }
 
   // ✅ 리뷰 삭제
   @Transactional
   public void deleteReview(Long reviewId) {
+    Long currentUserId = userService.getCurrentUser().getId();
     // 내 리뷰가 아니면 exception
-    if (!isMyReview(reviewId)) {
+    if (!isMyReview(reviewId, currentUserId)) {
       throw new IllegalArgumentException("본인의 리뷰만 삭제할 수 있습니다.");
     }
 
@@ -142,10 +149,9 @@ public class ReviewService {
     reviewRepository.delete(review);
   }
 
-  public boolean isMyReview(Long reviewId) {
-    Long currentUserId = userService.getCurrentUser().getId();
+  public boolean isMyReview(Long reviewId, Long userId) {
     Review review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
-    return review.getReviewer().getId().equals(currentUserId);
+    return review.getReviewer().getId().equals(userId);
   }
 }

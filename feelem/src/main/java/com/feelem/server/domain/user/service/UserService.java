@@ -52,7 +52,7 @@ public class UserService {
     }
 
     String name = authentication.getName();
-    log.info("👩‍🦰 현재 요청 하는 user의 id: {}", name);
+//    log.info("👩‍🦰 현재 요청 하는 user의 id: {}", name);
 
     // ✅ 숫자인 경우 ID로 조회
     try {

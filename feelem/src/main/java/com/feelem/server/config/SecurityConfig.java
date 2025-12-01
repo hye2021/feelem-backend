@@ -52,6 +52,7 @@ public class SecurityConfig {
             .requestMatchers(
                 "/auth/google",
                 "/auth/reissue",
+                "/api/v1/admin/**",
                 "/error"
             ).permitAll()
             .anyRequest().authenticated()

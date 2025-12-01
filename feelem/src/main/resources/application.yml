@@ -69,7 +69,7 @@ cloud:
 
 recommend:
   server:
-    url: http://172.31.44.15
+    url: http://172.31.44.15:8080
 
 generate:
   server:

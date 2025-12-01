@@ -130,7 +130,7 @@ public class FilterListController {
   }
 
    /** 내가 제작한 필터 목록*/
-  @GetMapping("my")
+  @GetMapping("/my")
   public ResponseEntity<Page<FilterListResponse>> getMyFilters(
       @PageableDefault(size = 20) Pageable pageable
   ) {

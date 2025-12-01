@@ -24,3 +24,4 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
       countQuery = "SELECT count(r) FROM Review r WHERE r.reviewer.id = :reviewerId")
   Page<Review> findAllByReviewerIdOrderByCreatedAtDesc(@Param("reviewerId") Long reviewerId, Pageable pageable);
 }
+

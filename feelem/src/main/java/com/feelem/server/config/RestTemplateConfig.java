@@ -11,8 +11,15 @@ public class RestTemplateConfig {
   @Bean
   public RestTemplate restTemplate() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setConnectTimeout(2000); // 2초 내 연결 안 되면 실패
-    factory.setReadTimeout(3000);    // 3초 내 응답 없으면 실패
+
+    // 1. 연결 타임아웃 (서버가 켜져 있는지 확인하는 시간)
+    // 이건 2~5초면 충분합니다. 서버가 꺼져있으면 빨리 실패하는 게 좋으니까요.
+    factory.setConnectTimeout(5000); // 5초로 약간 늘림
+
+    // 2. 읽기 타임아웃 (데이터 처리를 기다리는 시간) 👈 여기가 핵심!
+    // AI가 그림 그리는 동안 기다려줄 시간입니다.
+    factory.setReadTimeout(120000);  // 120000ms = 120초 = 2분
+
     return new RestTemplate(factory);
   }
 }

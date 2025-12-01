@@ -11,11 +11,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -38,7 +39,7 @@ public class Filter {
   @Column(nullable = false)
   private Integer price;
 
-  @Column(name= "original_image_url", nullable = false)
+  @Column(name = "original_image_url", nullable = false)
   private String originalImageUrl;
 
   @Column(name = "edited_image_url", nullable = false)
@@ -53,7 +54,8 @@ public class Filter {
   @Column(name = "aspect_y")
   private Integer aspectY;
 
-  /** 13가지 OpenGL 조정값 (Json)
+  /**
+   * 13가지 OpenGL 조정값 (Json)
    * brightness, exposure, contrast, highlight, shadow,
    * temperature, hue, saturation, sharpen, blur, vignette, noise
    */
@@ -65,14 +67,19 @@ public class Filter {
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted = false;
 
-  // 저장, 사용 수
+  // 저장(북마크), 사용(무료+유료), 구매(유료'결제'가 발생) 수
+  // 초기값 0L 설정
   @Column(name = "save_count", nullable = false)
   private Long saveCount = 0L;
+
   @Column(name = "use_count", nullable = false)
   private Long useCount = 0L;
 
+  @Column(name = "purchase_count", nullable = false)
+  private Long purchaseCount = 0L;
+
   @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt = LocalDateTime.now();
+  private LocalDateTime createdAt;
 
   // sns 아이디 표기
   @Column(name = "social_type")
@@ -88,13 +95,9 @@ public class Filter {
   @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FilterTag> filterTags = new ArrayList<>();
 
-  // 스티커 목록 (연결 엔티티
+  // 스티커 목록 (연결 엔티티)
   @OneToMany(mappedBy = "filter", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FaceStickerPlacement> faceStickerPlacements = new ArrayList<>();
-
-  // todo: 후기 목록
-  // @OneToMany(mappedBy="filter")
-  // private List<Review> reviews;
 
   @Builder
   public Filter(User creator, String name, Integer price,
@@ -115,11 +118,17 @@ public class Filter {
     this.createdAt = LocalDateTime.now();
     this.saveCount = 0L;
     this.useCount = 0L;
+    this.purchaseCount = 0L;
   }
 
-  public void increaseSaveCount() { this.saveCount++; }
-  public void decreaseSaveCount() { if (this.saveCount > 0) this.saveCount--; }
-  public void increaseUseCount()  { this.useCount++; }
-  public void softDelete()        { this.isDeleted = true; }
-  public void updatePrice(Integer price) { this.price = price; }
+  // [중요] 동시성 처리를 위해 increase/decrease 메서드는 Entity에서 제거하고 Repository 쿼리로 처리합니다.
+
+  // 단순 상태 변경 메서드는 유지
+  public void softDelete() {
+    this.isDeleted = true;
+  }
+
+  public void updatePrice(Integer price) {
+    this.price = price;
+  }
 }

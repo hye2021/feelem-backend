@@ -34,6 +34,11 @@ else:
 async def get_ranked_home_recs(
     request: Request, filter_ids: List[str], page: int
 ) -> List[str]:
+
+    # 🛑 ID가 없으면 DB 조회를 아예 시도하지 않아야 함
+    if not filter_ids:
+        return []
+
     redis = request.app.state.redis_client
     chroma_collection = request.app.state.chroma_collection
     sorted_ids = sorted(filter_ids)
@@ -51,6 +56,8 @@ async def get_ranked_home_recs(
                 ids=sorted_ids,
                 include=["embeddings", "metadatas"],
             )
+
+            # 2. 여기는 "ID는 보냈는데 DB에 그 ID 데이터가 없을 때"를 위한 2차 방어입니다.
             if not inputs or not inputs.get("embeddings"):
                 return []
 
@@ -70,7 +77,8 @@ async def get_ranked_home_recs(
                 )
     except Exception as e:
         print(f"❌ Error during home recommendation: {e}")
-        raise HTTPException(status_code=500, detail="Home recommendation failed.")
+        # raise HTTPException(status_code=500...) # 굳이 에러 내지 말고 빈 리스트 주는 게 안전할 수 있음
+        return []  # 에러 발생 시에도 죽지 않게 빈 리스트 반환
 
     # ✅ 항상 파이썬에서 최종 페이징
     start = page * settings.PAGE_SIZE

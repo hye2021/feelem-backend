@@ -21,7 +21,7 @@ public class ReviewController {
 
   private final ReviewService reviewService;
 
-  // ✅ 리뷰 생성
+  /** 리뷰 작성 : 이미지 업로드 + 리뷰 생성 */
   private final UploadService uploadService;
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -46,7 +46,7 @@ public class ReviewController {
     }
   }
 
-  // ✅ 내가 작성한 리뷰 목록 조회 (아카이브용) : 20개씩 페이징
+  /** 내가 작성한 리뷰 목록 조회 (아카이브용) : 20개씩 페이징*/
   @GetMapping("/my")
   public ResponseEntity<Page<MyReviewResponse>> getMyReviews(
       @RequestParam(defaultValue = "0") int page,
@@ -57,7 +57,7 @@ public class ReviewController {
     return ResponseEntity.ok(reviewService.getMyReviews(page, size));
   }
 
-  // ✅ 리뷰 1개 조회
+  /** 리뷰 1개 조회*/
   @GetMapping("/{reviewId}")
   public ResponseEntity<ReviewResponse> getReview(@PathVariable Long reviewId) {
 
@@ -68,30 +68,7 @@ public class ReviewController {
     return ResponseEntity.ok(response);
   }
 
-  // ✅ 리뷰 미리보기 최대 5개 반환
-  @GetMapping("/{filterId}/preview")
-  public ResponseEntity<List<ReviewResponse>> getReviewPreview(@PathVariable Long filterId) {
-
-    List<ReviewResponse> previews = reviewService.getReviewPreview(filterId);
-
-    log.info("⭐ 리뷰 미리보기 조회: filterId={}, count={}", filterId, previews.size());
-
-    return ResponseEntity.ok(previews);
-  }
-
-  // ✅ 필터에 따른 리뷰 목록 조회: 20개씩 페이징
-  @GetMapping("/{filterId}")
-  public ResponseEntity<Page<ReviewResponse>> getReviews(
-      @PathVariable Long filterId,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
-
-    log.info("⭐ 필터 리뷰 목록 조회: filterId={}, page={}, size={}", filterId, page, size);
-
-    return ResponseEntity.ok(reviewService.getReviewsByFilter(filterId, page, size));
-  }
-
-  // 리뷰 삭제
+  /** 리뷰 삭제*/
   @DeleteMapping("/{reviewId}")
   public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
 

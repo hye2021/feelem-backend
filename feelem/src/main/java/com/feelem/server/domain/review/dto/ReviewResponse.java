@@ -34,6 +34,7 @@ public class ReviewResponse {
     }
 
     return ReviewResponse.builder()
+        .isMine(isMine)
         .id(review.getId())
         .imageUrl(review.getImageUrl())
         .reviewerNickname(review.getReviewer().getNickname())

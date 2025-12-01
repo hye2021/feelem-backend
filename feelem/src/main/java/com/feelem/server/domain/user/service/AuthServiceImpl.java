@@ -59,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   @Override
   public TokenInfo loginWithGoogle(String idTokenString) throws Exception {
-    log.info("📥 Received Google ID Token: {}", idTokenString);
+//    log.info("📥 Received Google ID Token: {}", idTokenString);
 
     // 1️⃣ Google ID Token 검증
     GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
@@ -85,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
     String providerId = payload.getSubject();
     String provider = "google";
 
-    log.info("✅ Google verified user: email={}, nickname={}, providerId={}", email, nickname, providerId);
+//    log.info("✅ Google verified user: email={}, nickname={}, providerId={}", email, nickname, providerId);
 
     // 3️⃣ 사용자 등록 또는 조회
     User user = userRepository.findByEmail(email)
@@ -111,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
     user.updateRefreshToken(tokenInfo.getRefreshToken());
     userRepository.save(user); // ✅ 업데이트 반영
 
-    log.info("🎫 JWT generated for userId {} -> {}", user.getId(), tokenInfo.getAccessToken());
+//    log.info("🎫 JWT generated for userId {} -> {}", user.getId(), tokenInfo.getAccessToken());
     return tokenInfo;
   }
 }
