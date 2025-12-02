@@ -58,7 +58,8 @@ async def get_ranked_home_recs(
             )
 
             # 2. 2차 방어: ID는 보냈는데 DB에 데이터가 없을 때
-            if not inputs or not inputs.get("embeddings"):
+            embeddings = inputs.get("embeddings") if inputs else None
+            if embeddings is None or len(embeddings) == 0:
                 return []
 
             avg_vec = np.mean(inputs["embeddings"], axis=0).tolist()

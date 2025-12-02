@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Component
 @Slf4j
@@ -24,15 +25,22 @@ public class RecommendServingClient {
 
   // 1. 인덱싱 요청
   public void indexFilter(IndexFilterRequest request) {
-    webClient.post()
-        .uri("/admin/index")
-        .bodyValue(request)
-        .retrieve()
-        .bodyToMono(Void.class)
-        .subscribe(
-            null,
-            error -> log.error("❌ AI Indexing Failed for FilterID: {}", request.filter_id(), error)
-        );
+    try {
+      webClient.post()
+          .uri("/admin/index")
+          .bodyValue(request)
+          .retrieve()
+          .bodyToMono(Void.class)
+          .block(); // 👈 [핵심] 여기서 서버 응답이 올 때까지 기다립니다. (동기 처리)
+
+    } catch (WebClientResponseException e) {
+      // 💡 에러 발생 시 상세 응답(Body)을 로그에 찍어서 원인을 파악합니다.
+      log.error("❌ AI Indexing Failed (Status: {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+      throw e; // 컨트롤러가 실패를 알 수 있도록 예외를 다시 던짐
+    } catch (Exception e) {
+      log.error("❌ AI Indexing Error: {}", e.getMessage());
+      throw new RuntimeException(e);
+    }
   }
 
   // 2. 삭제 요청
