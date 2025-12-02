@@ -43,23 +43,24 @@ public class SalesService {
     User user = userService.getCurrentUser();
     LocalDateTime[] range = calculateDateRange(period);
 
-    // 해당 기간 내 내 필터의 '구매(PURCHASE)' 내역을 모두 가져옴
     List<FilterTransaction> transactions = filterTransactionRepository.findAllBySellerIdAndDateRange(
         user.getId(), range[0], range[1]
     );
 
-    // 총 판매 수량
     long totalSalesCount = transactions.size();
 
-    // 총 판매 금액 (정산 예정 금액)
-    // TODO: 수수료 정책이 있다면 여기서 차감 로직 추가 (예: amount * 0.9)
-    long settlementAmount = transactions.stream()
+    // 1. 판매된 총 포인트 합계 (예: 1,000 포인트)
+    long totalSoldPoints = transactions.stream()
         .mapToLong(FilterTransaction::getAmount)
         .sum();
 
+    // 2. [수정됨] 정산 금액 계산 (정책: 1포인트당 5원 정산)
+    // 1,000 포인트 * 5원 = 5,000원 정산
+    long settlementAmount = totalSoldPoints * 5;
+
     return SalesTotalResponse.builder()
         .totalSales(totalSalesCount)
-        .settlementAmount(settlementAmount)
+        .settlementAmount(settlementAmount) // 단위: KRW (원)
         .build();
   }
 

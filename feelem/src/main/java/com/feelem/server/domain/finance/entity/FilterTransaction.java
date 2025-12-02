@@ -29,7 +29,7 @@ public class FilterTransaction {
   @Column(nullable = false)
   private FilterTransactionType type;
 
-  // 결제 금액 (무료 사용 시 0)
+  // 결제 금액 (무료 사용 시 0) - 포인트
   @Column(name = "amount", nullable = false)
   private int amount;
 
