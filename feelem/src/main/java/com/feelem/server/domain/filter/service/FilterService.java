@@ -255,12 +255,12 @@ public class FilterService {
       // [B] 자연어(하이브리드) 검색: 제목 검색 + AI 검색
 
       // 1) DB 제목 검색 (정확도 높음 -> 우선 순위)
-      List<Filter> nameMatches = filterRepository.findByNameContainingAndIsDeletedFalseOrderByCreatedAtDesc(query);
+      List<Filter> nameMatches = filterRepository.findByNameSearch(query);
 
       // 2) AI 의미 검색 (연관성 높음 -> 후순위)
       //    AI에게는 페이징 없이 상위 100~200개 정도를 한 번에 달라고 요청하는 것이 좋습니다.
       //    (합쳐서 페이징을 다시 해야 하기 때문)
-      List<String> aiSearchIds = aiClient.getSearchResults(query, 0); // 0페이지(상위 결과)만 요청
+      List<String> aiSearchIds = aiClient.getSearchResults(query, 0, 200); // 0페이지(상위 결과)만 요청
 
       List<Filter> aiMatches = new ArrayList<>();
       if (!aiSearchIds.isEmpty()) {
@@ -353,18 +353,37 @@ public class FilterService {
         .map(String::valueOf)
         .collect(Collectors.toList());
 
+    // 🔍 [디버깅 로그 1] 우리가 AI에게 무엇을 보냈는가?
+    log.info("🔍 [HomeRec] User ID: {}, 보낸 북마크 ID 목록: {}", user.getId(), likedFilterIds);
+
+    if (likedFilterIds.isEmpty()) {
+      log.info("⚠️ [HomeRec] 유저의 최근 북마크 내역이 없음 (Cold Start) -> 즉시 Fallback");
+      return getRecentFilters(pageable).getContent();
+    }
+
     // 2. AI 서버 요청
     List<String> recommendedIds = aiClient.getHomeRecommendations(likedFilterIds, page);
 
+    // 🔍 [디버깅 로그 2] AI가 무엇을 응답했는가?
+    log.info("🤖 [HomeRec] AI 응답 ID 목록 (Size: {}): {}",
+        (recommendedIds != null ? recommendedIds.size() : "NULL"),
+        recommendedIds);
+
     // 3. 결과가 없으면 최신순 Fallback
-    if (recommendedIds.isEmpty()) {
-      log.info("⚠️ AI 추천 결과 없음 -> 최신순 Fallback");
+    if (recommendedIds == null || recommendedIds.isEmpty()) {
+      log.info("⚠️ [HomeRec] AI 추천 결과가 비어있음 -> 최신순 Fallback 실행");
       return getRecentFilters(pageable).getContent();
     }
 
     // 4. DB 조회
     List<Long> ids = recommendedIds.stream().map(Long::parseLong).toList();
     List<Filter> filters = filterRepository.findAllById(ids);
+
+    // 🔍 [디버깅 로그 3] 실제 DB에서 찾은 개수는? (데이터 불일치 확인)
+    if (filters.size() != recommendedIds.size()) {
+      log.warn("⚠️ [HomeRec] 데이터 불일치 감지! AI 추천수: {}, DB 발견수: {}",
+          recommendedIds.size(), filters.size());
+    }
 
     // 5. 정렬 및 DTO 변환
     return sortByIdListOrder(filters, recommendedIds).stream()
@@ -502,6 +521,7 @@ public class FilterService {
   }
 
   /**
+   * 아카이브
    * 북마크한 필터 목록 조회
    */
   @Transactional(readOnly = true)

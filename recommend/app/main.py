@@ -31,11 +31,11 @@ async def recommend_home_filters(
 @app.get("/search", response_model=SearchResponse)
 async def search_filters_by_text(
     request: Request,
-    q: str = Query(..., min_length=1),
+    query: str = Query(..., min_length=1, description="Search keyword"),
     page: int = Query(0, ge=0),
+    size: int = Query(20, ge=1, le=200),
 ):
-    """텍스트 기반 필터 검색"""
-    ids = await get_text_search_results(request, q, page)
+    ids = await get_text_search_results(request, query, page, size)
     return SearchResponse(search_results=ids)
 
 

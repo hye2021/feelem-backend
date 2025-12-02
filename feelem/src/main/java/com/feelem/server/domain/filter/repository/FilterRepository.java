@@ -110,5 +110,12 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
   /**
    *제목(이름)에 검색어가 포함된 필터 찾기 (최신순 정렬)
    */
-  List<Filter> findByNameContainingAndIsDeletedFalseOrderByCreatedAtDesc(String name);
+//  List<Filter> findByNameContainingAndIsDeletedFalseOrderByCreatedAtDesc(String name);
+
+  /**
+   *제목(이름)에 검색어가 포함된 필터 찾기 (최신순 정렬)
+   * JPQL 버전.. -> 이스케이프 처리 등 커스텀 필요시 사용
+   */
+  @Query("SELECT f FROM Filter f WHERE f.name LIKE %:name% AND f.isDeleted = false ORDER BY f.createdAt DESC")
+  List<Filter> findByNameSearch(@Param("name") String name);
 }
