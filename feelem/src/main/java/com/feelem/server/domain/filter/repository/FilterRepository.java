@@ -99,6 +99,6 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
    * 구매 수 1 증가
    */
   @Modifying(clearAutomatically = true)
-  @Query("UPDATE Filter f SET f.purchaseCount = f.purchaseCount + 1 WHERE f.id = :id AND f.isDeleted = false")
-  void increasePurchaseCount(@Param("id") Long id);
+  @Query("UPDATE Filter f SET f.purchaseCount = f.purchaseCount + 1, f.totalSalesAmount = f.totalSalesAmount + :price WHERE f.id = :id AND f.isDeleted = false")
+  void increasePurchaseCountAndAmount(@Param("id") Long id, @Param("price") int price);
 }

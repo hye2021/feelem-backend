@@ -71,13 +71,15 @@ public class Filter {
   // 초기값 0L 설정
   @Column(name = "save_count", nullable = false)
   private Long saveCount = 0L;
-
   @Column(name = "use_count", nullable = false)
   private Long useCount = 0L;
-
   @Column(name = "purchase_count", nullable = false)
   private Long purchaseCount = 0L;
-
+  
+  // 유료 필터로 총 얼마 판매되었는지 누적
+  private Long totalSalesAmount = 0L;
+  
+  // 생성 일시
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
 
@@ -119,9 +121,10 @@ public class Filter {
     this.saveCount = 0L;
     this.useCount = 0L;
     this.purchaseCount = 0L;
+    this.totalSalesAmount = 0L;
   }
 
-  // [중요] 동시성 처리를 위해 increase/decrease 메서드는 Entity에서 제거하고 Repository 쿼리로 처리합니다.
+  // [중요] 동시성 처리를 위해 increase/decrease 메서드는 Entity에서 제거하고 Repository 쿼리로 처리
 
   // 단순 상태 변경 메서드는 유지
   public void softDelete() {

@@ -21,6 +21,16 @@ public class SalesListResponse {
   private Long salesCount;
   // 북마크 수
   private Long saveCount;
-
-  // todo
+  
+  public static SalesListResponse from(Filter filter) {
+    return SalesListResponse.builder()
+        .filterId(filter.getId())
+        .filterName(filter.getName())
+        .filterImageUrl(filter.getEditedImageUrl())
+        .filterCreatedAt(filter.getCreatedAt().toString())
+        .price(filter.getPrice())
+        .saveCount(filter.getSaveCount())
+        .salesCount(filter.getPurchaseCount())
+        .build();
+  }
 }

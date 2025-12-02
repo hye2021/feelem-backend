@@ -418,26 +418,29 @@ public class FilterService {
 
   /**
    * 북마크 토글 (동시성 처리 적용)
+   * @return 갱신된 최신 북마크 수 (saveCount)
    */
   @Transactional
   public void toggleBookmark(Long filterId) {
     User user = userService.getCurrentUser();
-    Filter filter = findById(filterId); // 단순 존재 확인
+    Filter filter = findById(filterId); // 1. 초기 조회
 
     boolean exists = bookmarkRepository.existsByUserAndFilter(user, filter);
 
     if (exists) {
       bookmarkRepository.deleteByUserAndFilter(user, filter);
-      // [중요] 엔티티 메서드 대신 Repository 쿼리 호출 (동시성 보장)
+      // 2. 카운트 감소 (DB 직접 업데이트 & 1차 캐시 초기화됨)
       filterRepository.decreaseSaveCount(filter.getId());
     } else {
       bookmarkRepository.save(new Bookmark(user, filter));
-      // [중요] 엔티티 메서드 대신 Repository 쿼리 호출 (동시성 보장)
+      // 2. 카운트 증가 (DB 직접 업데이트 & 1차 캐시 초기화됨)
       filterRepository.increaseSaveCount(filter.getId());
     }
 
-    // 만약 최신 count가 담긴 객체가 필요하다면 다시 조회해야 함
-    // Filter updatedFilter = filterRepository.findByIdAndIsDeletedFalse(filterId).orElseThrow();
+    // 만약 필터 정보를 다시 조회해야 한다면
+    // 동시성 이슈로 인해 반영이 지연될 수 있으므로, 갱신된 필터 엔티티를 다시 조회
+//    Filter updatedFilter = filterRepository.findByIdAndIsDeletedFalse(filterId)
+//        .orElseThrow(() -> new EntityNotFoundException("Filter not found after update"));
   }
 
   /**
@@ -592,7 +595,7 @@ public class FilterService {
       point.setAmount(balance);
 
       // [중요] 구매 수 증가 (Repository 쿼리 호출)
-      filterRepository.increasePurchaseCount(filterId);
+      filterRepository.increasePurchaseCountAndAmount(filterId, price);
 
       log.info("💰 Filter Purchase - Buyer: {}, Filter: {}, Amount: {}",
           user.getId(), filterId, price);
