@@ -35,7 +35,9 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -238,52 +240,59 @@ public class FilterService {
   ) {
     User user = userService.getCurrentUser();
 
-    // 결과 담을 리스트
+    // 최종 결과를 담을 리스트
     List<Filter> filters = new ArrayList<>();
 
-    // 1. 검색 타입에 따른 분기 처리
+    // =================================================================
+    // 1. 검색 타입에 따른 데이터 확보
+    // =================================================================
     if (searchType == SearchType.TAG) {
-      // [태그 검색]
+      // [A] 태그 검색
       List<String> tags = List.of(query.split(","));
       filters = filterRepository.findByTagsContainingAll(tags, (long) tags.size());
+
     } else {
-      // [자연어 검색] AI 서버 요청
-      int limit = 200; // AI 서버 최대 제공 개수
-      int pageSize = pageable.getPageSize();
-      int maxPages = (int) Math.ceil((double) limit / pageSize);
+      // [B] 자연어(하이브리드) 검색: 제목 검색 + AI 검색
 
-      int requestPage = pageable.getPageNumber();
-      int aiRequestPage = requestPage;
+      // 1) DB 제목 검색 (정확도 높음 -> 우선 순위)
+      List<Filter> nameMatches = filterRepository.findByNameContainingAndIsDeletedFalseOrderByCreatedAtDesc(query);
 
-      // 페이지 순환
-      if (requestPage >= maxPages) {
-        aiRequestPage = requestPage % maxPages;
+      // 2) AI 의미 검색 (연관성 높음 -> 후순위)
+      //    AI에게는 페이징 없이 상위 100~200개 정도를 한 번에 달라고 요청하는 것이 좋습니다.
+      //    (합쳐서 페이징을 다시 해야 하기 때문)
+      List<String> aiSearchIds = aiClient.getSearchResults(query, 0); // 0페이지(상위 결과)만 요청
+
+      List<Filter> aiMatches = new ArrayList<>();
+      if (!aiSearchIds.isEmpty()) {
+        List<Long> ids = aiSearchIds.stream().map(Long::parseLong).toList();
+        List<Filter> foundFilters = filterRepository.findAllById(ids);
+        // AI가 추천해준 순서(유사도 순)대로 정렬
+        aiMatches = sortByIdListOrder(foundFilters, aiSearchIds);
       }
 
-      // AI 서버 검색
-      List<String> searchIds = aiClient.getSearchResults(query, aiRequestPage);
+      // 3) 병합 (Merge) & 중복 제거
+      //    LinkedHashSet을 사용해 순서 보장 (제목 검색 결과 먼저 -> 그 뒤에 AI 결과)
+      Set<Filter> mergedSet = new LinkedHashSet<>();
+      mergedSet.addAll(nameMatches); // 제목 일치 필터 먼저 넣기
+      mergedSet.addAll(aiMatches);   // AI 추천 필터 뒤에 넣기 (이미 있는 건 중복 제거됨)
 
-      if (!searchIds.isEmpty()) {
-        List<Long> ids = searchIds.stream().map(Long::parseLong).toList();
-        filters = filterRepository.findAllById(ids);
-
-        // 자연어 검색이면서 '추천순'일 경우 AI 순서 유지
-        if (sortType == FilterSortType.ACCURACY) {
-          filters = sortByIdListOrder(filters, searchIds);
-        }
-      }
+      filters = new ArrayList<>(mergedSet);
     }
 
     if (filters.isEmpty()) {
       return Collections.emptyList();
     }
 
+    // =================================================================
     // 2. 정렬 로직 (메모리 정렬)
+    // =================================================================
     Stream<Filter> stream = filters.stream();
 
     switch (sortType) {
       case ACCURACY -> {
-        // 태그 검색에서 ACCURACY가 들어오면 최신순 Fallback
+        // 자연어 검색일 경우: 이미 위에서 [제목 일치 -> AI 랭킹] 순서로 합쳤으므로
+        // 별도의 정렬을 하지 않는 것이 '정확도 순'입니다.
+        // 단, 태그 검색일 경우엔 최신순으로 Fallback
         if (searchType == SearchType.TAG) {
           stream = stream.sorted(Comparator.comparing(Filter::getCreatedAt).reversed());
         }
@@ -297,25 +306,31 @@ public class FilterService {
       case LOW_PRICE -> // 낮은 가격순
           stream = stream.sorted(Comparator.comparing(Filter::getPrice));
 
-      case REVIEW_COUNT -> // 사용 수 내림차순 (임시)
+      case REVIEW_COUNT -> // 사용 수 내림차순
           stream = stream.sorted(Comparator.comparing(Filter::getUseCount).reversed());
     }
 
     List<Filter> sortedFilters = stream.collect(Collectors.toList());
 
-    // 3. 태그 검색일 경우 페이징 처리 (수동)
-    if (searchType == SearchType.TAG) {
-      int start = (int) pageable.getOffset();
-      int end = Math.min((start + pageable.getPageSize()), sortedFilters.size());
+    // =================================================================
+    // 3. 페이징 처리 (수동)
+    // =================================================================
+    // 두 리스트를 합쳤기 때문에 전체 개수가 달라졌습니다.
+    // 따라서 AI 페이징 대신, 합쳐진 리스트를 기준으로 자바에서 잘라줘야 합니다.
 
-      if (start > sortedFilters.size()) {
-        return Collections.emptyList();
-      }
-      sortedFilters = sortedFilters.subList(start, end);
+    int start = (int) pageable.getOffset();
+    int end = Math.min((start + pageable.getPageSize()), sortedFilters.size());
+
+    // 요청한 페이지가 전체 개수를 넘어가면 빈 리스트 반환
+    if (start >= sortedFilters.size()) {
+      return Collections.emptyList();
     }
 
+    // 해당 페이지 부분만 자르기 (SubList)
+    List<Filter> pagedFilters = sortedFilters.subList(start, end);
+
     // 4. DTO 변환
-    return sortedFilters.stream()
+    return pagedFilters.stream()
         .map(f -> toFilterListResponse(f, user))
         .collect(Collectors.toList());
   }

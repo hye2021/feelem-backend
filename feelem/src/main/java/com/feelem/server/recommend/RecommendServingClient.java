@@ -18,16 +18,14 @@ public class RecommendServingClient {
 
   private final WebClient webClient;
 
-  // ✅ 변경됨: Config에 등록된 'recommendationWebClient' 빈(Bean)을 주입받음
-  // (@Value로 URL을 직접 받는 대신, 이미 설정된 WebClient 객체를 받습니다)
   public RecommendServingClient(@Qualifier("recommendationWebClient") WebClient webClient) {
     this.webClient = webClient;
   }
 
-  // 1. 인덱싱 요청 (비동기)
+  // 1. 인덱싱 요청
   public void indexFilter(IndexFilterRequest request) {
     webClient.post()
-        .uri("/admin/index") // baseUrl이 설정돼 있으므로 뒷부분만 작성
+        .uri("/admin/index")
         .bodyValue(request)
         .retrieve()
         .bodyToMono(Void.class)
@@ -37,7 +35,7 @@ public class RecommendServingClient {
         );
   }
 
-  // 2. 삭제 요청 (비동기)
+  // 2. 삭제 요청
   public void deleteFilter(Long filterId) {
     webClient.delete()
         .uri("/admin/filter/" + filterId)
@@ -49,7 +47,7 @@ public class RecommendServingClient {
         );
   }
 
-  // 3. 홈 추천 요청 (동기)
+  // 3. 홈 추천 요청
   public List<String> getHomeRecommendations(List<String> likedFilterIds, int page) {
     Map<String, Object> body = Map.of("filter_ids", likedFilterIds);
 
@@ -70,13 +68,16 @@ public class RecommendServingClient {
     }
   }
 
-  // 4. 검색 요청 (동기)
-  public List<String> getSearchResults(String query, int page) {
+  // 4. 검색 요청 (수정됨: size 추가, q -> query 변경)
+  public List<String> getSearchResults(String query, int page, int size) {
     try {
       SearchResponse response = webClient.get()
           .uri(uriBuilder -> uriBuilder.path("/search")
-              .queryParam("q", query)
+              // ⚠️ 중요: Python 함수 인자가 'query'이므로 'q' 대신 'query'를 써야 합니다.
+              .queryParam("query", query)
               .queryParam("page", page)
+              // ✅ 추가: 하이브리드 검색을 위해 200개를 한 번에 요청할 수 있도록 size 파라미터 추가
+              .queryParam("size", size)
               .build())
           .retrieve()
           .bodyToMono(SearchResponse.class)

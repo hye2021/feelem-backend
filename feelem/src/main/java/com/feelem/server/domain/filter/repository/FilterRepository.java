@@ -106,4 +106,9 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
   @Modifying(clearAutomatically = true)
   @Query("UPDATE Filter f SET f.purchaseCount = f.purchaseCount + 1, f.totalSalesAmount = f.totalSalesAmount + :price WHERE f.id = :id AND f.isDeleted = false")
   void increasePurchaseCountAndAmount(@Param("id") Long id, @Param("price") int price);
+
+  /**
+   *제목(이름)에 검색어가 포함된 필터 찾기 (최신순 정렬)
+   */
+  List<Filter> findByNameContainingAndIsDeletedFalseOrderByCreatedAtDesc(String name);
 }
