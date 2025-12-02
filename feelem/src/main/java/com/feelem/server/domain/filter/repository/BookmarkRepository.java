@@ -23,12 +23,10 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
    * 북마크된 필터 목록을 바로 Filter 기준으로 페이징 조회한다.
    * createdAt 기준 내림차순 정렬
    */
-  @Query("""
-        SELECT b.filter
-        FROM Bookmark b
-        WHERE b.user.id = :userId
-        ORDER BY b.createdAt DESC
-    """)
+  @Query("SELECT f FROM Bookmark b JOIN b.filter f " +
+      "WHERE b.user.id = :userId " +
+      "AND f.isDeleted = false " +
+      "ORDER BY b.createdAt DESC")
   Page<Filter> findBookmarkedFilters(Long userId, Pageable pageable);
 
   @Query("""

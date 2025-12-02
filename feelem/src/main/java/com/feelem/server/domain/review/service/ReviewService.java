@@ -86,7 +86,7 @@ public class ReviewService {
     Long userId = userService.getCurrentUser().getId();
     return ReviewResponse.fromEntity(review, isMyReview(reviewId, userId));
   }
-
+  
   // ✅ 리뷰 목록 조회 (페이징)
   @Transactional(readOnly = true)
   public Page<ReviewResponse> getReviewsByFilter(Long filterId, int page, int size) {
@@ -104,13 +104,19 @@ public class ReviewService {
     return reviews.map(review -> ReviewResponse.fromEntity(review, isMyReview(review.getId(), currentUserId)));
   }
 
+  // 아카이브
   // ✅ 내가 작성한 리뷰 목록 조회 (페이징)
   @Transactional(readOnly = true)
   public Page<MyReviewResponse> getMyReviews(int page, int size) {
     Long currentUserId = userService.getCurrentUser().getId();
     PageRequest pageable = PageRequest.of(page, size);
 
-    Page<Review> reviews = reviewRepository.findAllByReviewerIdOrderByCreatedAtDesc(currentUserId, pageable);
+    // 🔴 기존 코드: 단순히 작성자 기준으로 조회 (삭제된 필터 포함됨)
+    // Page<Review> reviews = reviewRepository.findAllByReviewerIdOrderByCreatedAtDesc(currentUserId, pageable);
+
+    // 🟢 수정 코드: 작성자 기준 + 필터가 삭제되지 않은(isDeleted=false) 리뷰만 조회
+    // (ReviewRepository에 해당 메서드가 정의되어 있어야 합니다)
+    Page<Review> reviews = reviewRepository.findAllByReviewerIdAndFilterIsDeletedFalseOrderByCreatedAtDesc(currentUserId, pageable);
 
     return reviews.map(review -> {
       Filter filter = review.getFilter();

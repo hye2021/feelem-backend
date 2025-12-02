@@ -23,5 +23,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
       "ORDER BY r.createdAt DESC",
       countQuery = "SELECT count(r) FROM Review r WHERE r.reviewer.id = :reviewerId")
   Page<Review> findAllByReviewerIdOrderByCreatedAtDesc(@Param("reviewerId") Long reviewerId, Pageable pageable);
+
+  @Query(value = "SELECT r FROM Review r " +
+      "JOIN FETCH r.filter f " +       // 필터에 별칭(f) 부여
+      "JOIN FETCH r.reviewer " +
+      "LEFT JOIN FETCH r.social " +
+      "WHERE r.reviewer.id = :reviewerId " +
+      "AND f.isDeleted = false " +     // 👈 핵심 조건 추가
+      "ORDER BY r.createdAt DESC",
+      countQuery = "SELECT count(r) FROM Review r JOIN r.filter f WHERE r.reviewer.id = :reviewerId AND f.isDeleted = false")
+  Page<Review> findAllByReviewerIdAndFilterIsDeletedFalseOrderByCreatedAtDesc(Long reviewerId, Pageable pageable);
 }
 
