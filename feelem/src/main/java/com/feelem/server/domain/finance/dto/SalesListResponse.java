@@ -15,10 +15,12 @@ public class SalesListResponse {
   private String filterImageUrl;
   // 필터 등록일
   private String filterCreatedAt;
-  // 가격
+  // 필터 가격
   private int price;
   // 판매 수량
   private Long salesCount;
+  // 판매 금액
+  private Long salesAmount;
   // 북마크 수
   private Long saveCount;
   
@@ -31,6 +33,7 @@ public class SalesListResponse {
         .price(filter.getPrice())
         .saveCount(filter.getSaveCount())
         .salesCount(filter.getPurchaseCount())
+        .salesAmount(filter.getTotalSalesAmount())
         .build();
   }
 }

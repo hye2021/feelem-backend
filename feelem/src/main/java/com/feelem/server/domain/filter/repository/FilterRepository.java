@@ -46,6 +46,11 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
   Page<Filter> findAllByIsDeletedFalseOrderByRandom(Pageable pageable);
 
   /**
+   * 정렬 조건이 메서드 이름에 포함되지 않은 버전
+   */
+  Page<Filter> findAllByCreatorIdAndIsDeletedFalse(Long creatorId, Pageable pageable);
+
+  /**
    * 특정 User가 제작한 필터 목록 조회
    */
   @Query(value = "SELECT f FROM Filter f JOIN FETCH f.creator WHERE f.creator.id = :creatorId AND f.isDeleted = false ORDER BY f.createdAt DESC",
