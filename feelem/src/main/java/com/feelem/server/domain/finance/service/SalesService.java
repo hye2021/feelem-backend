@@ -100,7 +100,7 @@ public class SalesService {
     User user = userService.getCurrentUser();
 
     // 필터 조회 및 본인 확인
-    Filter filter = filterRepository.findByIdAndIsDeletedFalse(filterId)
+    Filter filter = filterRepository.findById(filterId)
         .orElseThrow(() -> new IllegalArgumentException("필터를 찾을 수 없습니다."));
 
     if (!filter.getCreator().getId().equals(user.getId())) {

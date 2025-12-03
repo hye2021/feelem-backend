@@ -1,5 +1,6 @@
 package com.feelem.server.domain.finance.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.feelem.server.domain.filter.entity.Filter;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class SalesListResponse {
   // 북마크 수
   private Long saveCount;
   // 삭제 여부
+  @JsonProperty("isDeleted")
   private boolean isDeleted;
   
   public static SalesListResponse from(Filter filter) {
