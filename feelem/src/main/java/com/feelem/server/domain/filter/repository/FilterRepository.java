@@ -118,4 +118,25 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
    */
   @Query("SELECT f FROM Filter f WHERE f.name LIKE %:name% AND f.isDeleted = false ORDER BY f.createdAt DESC")
   List<Filter> findByNameSearch(@Param("name") String name);
+
+  /**
+   * 판매자 대시보드용 필터 목록 조회
+   *
+   * 조건 1: 내(creatorId)가 만든 필터
+   * 조건 2: (판매 내역(PURCHASE)이 존재함) OR (필터 가격(price)이 0보다 큼)
+   * 조건 3: 삭제된(isDeleted=true) 필터도 포함 (isDeleted 조건 없음)
+   */
+  @Query(value = "SELECT DISTINCT f FROM Filter f " +
+      "LEFT JOIN FilterTransaction ft ON ft.filter = f " +
+      "WHERE f.creator.id = :creatorId " +
+      "AND (" +
+      "   ft.type = 'PURCHASE' " +  // 1. 구매된 내역이 있거나
+      "   OR " +
+      "   f.price > 0 " +           // 2. 유료 필터인 경우 (가격 필드명 확인 필요)
+      ")",
+      countQuery = "SELECT count(DISTINCT f) FROM Filter f " +
+          "LEFT JOIN FilterTransaction ft ON ft.filter = f " +
+          "WHERE f.creator.id = :creatorId " +
+          "AND (ft.type = 'PURCHASE' OR f.price > 0)")
+  Page<Filter> findSoldOrPaidFilters(@Param("creatorId") Long creatorId, Pageable pageable);
 }

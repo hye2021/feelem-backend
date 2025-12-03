@@ -95,10 +95,7 @@ public class FilterController {
   public ResponseEntity<Boolean> toggleBookmark(@PathVariable Long filterId) {
 
     // 1) 북마크 상태 변경
-    filterService.toggleBookmark(filterId);
-
-    // 2) 변경 후 현재 상태 조회 (true=북마크됨, false=북마크안됨)
-    boolean result = filterService.isBookmarked(filterId);
+    boolean result = filterService.toggleBookmark(filterId);
 
     log.info("⭐ 북마크 토글 완료: filterId={}, bookmark={}", filterId, result);
 

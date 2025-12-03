@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -455,26 +456,26 @@ public class FilterService {
    * @return 갱신된 최신 북마크 수 (saveCount)
    */
   @Transactional
-  public void toggleBookmark(Long filterId) {
+  public boolean toggleBookmark(Long filterId) {
     User user = userService.getCurrentUser();
-    Filter filter = findById(filterId); // 1. 초기 조회
+    Filter filter = findById(filterId);
 
+    // 1. 존재하는지 확인
     boolean exists = bookmarkRepository.existsByUserAndFilter(user, filter);
 
     if (exists) {
-      bookmarkRepository.deleteByUserAndFilter(user, filter);
-      // 2. 카운트 감소 (DB 직접 업데이트 & 1차 캐시 초기화됨)
+      // [수정] 객체(Entity)가 아니라 ID로 DB에서 바로 삭제해버립니다.
+      // User 객체의 equals() 문제나 영속성 컨텍스트 문제를 완벽하게 회피합니다.
+      bookmarkRepository.deleteByUserIdAndFilterId(user.getId(), filter.getId());
+
       filterRepository.decreaseSaveCount(filter.getId());
+      return false; // 삭제됨 -> false 반환
     } else {
       bookmarkRepository.save(new Bookmark(user, filter));
-      // 2. 카운트 증가 (DB 직접 업데이트 & 1차 캐시 초기화됨)
-      filterRepository.increaseSaveCount(filter.getId());
-    }
 
-    // 만약 필터 정보를 다시 조회해야 한다면
-    // 동시성 이슈로 인해 반영이 지연될 수 있으므로, 갱신된 필터 엔티티를 다시 조회
-//    Filter updatedFilter = filterRepository.findByIdAndIsDeletedFalse(filterId)
-//        .orElseThrow(() -> new EntityNotFoundException("Filter not found after update"));
+      filterRepository.increaseSaveCount(filter.getId());
+      return true; // 저장됨 -> true 반환
+    }
   }
 
   /**

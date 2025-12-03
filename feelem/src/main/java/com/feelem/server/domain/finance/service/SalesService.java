@@ -73,8 +73,8 @@ public class SalesService {
     // 1. 정렬 기준 변환 (Enum -> Sort)
     Sort sort = switch (sortBy) {
       case RECENT -> Sort.by(Sort.Direction.DESC, "createdAt");
-      case COUNT -> Sort.by(Sort.Direction.DESC, "purchaseCount"); // 판매량
-      case AMOUNT -> Sort.by(Sort.Direction.DESC, "totalSalesAmount"); // 판매금액
+      case COUNT -> Sort.by(Sort.Direction.DESC, "purchaseCount");
+      case AMOUNT -> Sort.by(Sort.Direction.DESC, "totalSalesAmount");
       case NAME -> Sort.by(Sort.Direction.ASC, "name");
     };
 
@@ -85,10 +85,8 @@ public class SalesService {
         sort
     );
 
-    // 3. [수정됨] 이름에 OrderBy가 없는 메서드 호출
-    // (기존: findAllByCreatorIdAndIsDeletedFalseOrderByCreatedAtDesc -> 정렬 무시됨)
-    // (변경: findAllByCreatorIdAndIsDeletedFalse -> sortedPageable의 정렬 적용됨)
-    Page<Filter> filters = filterRepository.findAllByCreatorIdAndIsDeletedFalse(
+    // 3. 판매 내역이 있고, 혹은 유료이거나, 삭제 여부 상관없이 조회하는 메서드 호출
+    Page<Filter> filters = filterRepository.findSoldOrPaidFilters(
         user.getId(), sortedPageable
     );
 

@@ -23,6 +23,8 @@ public class SalesListResponse {
   private Long salesAmount;
   // 북마크 수
   private Long saveCount;
+  // 삭제 여부
+  private boolean isDeleted;
   
   public static SalesListResponse from(Filter filter) {
     return SalesListResponse.builder()
@@ -34,6 +36,7 @@ public class SalesListResponse {
         .saveCount(filter.getSaveCount())
         .salesCount(filter.getPurchaseCount())
         .salesAmount(filter.getTotalSalesAmount())
+        .isDeleted(filter.getIsDeleted())
         .build();
   }
 }

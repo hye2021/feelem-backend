@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +19,10 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
   void deleteByUserAndFilter(User user, Filter filter);
 
   Optional<Bookmark> findByUserAndFilter(User user, Filter filter);
+
+  @Modifying(clearAutomatically = true) // 쿼리 실행 후 영속성 컨텍스트 초기화
+  @Query("DELETE FROM Bookmark b WHERE b.user.id = :userId AND b.filter.id = :filterId")
+  void deleteByUserIdAndFilterId(@Param("userId") Long userId, @Param("filterId") Long filterId);
 
   /**
    * 북마크된 필터 목록을 바로 Filter 기준으로 페이징 조회한다.
@@ -36,4 +41,5 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
       ORDER BY b.createdAt DESC
   """)
   List<Long> findRecentBookmarkedFilterIds(@Param("userId") Long userId, Pageable pageable);
+
 }
