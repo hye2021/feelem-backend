@@ -15,7 +15,7 @@ public class FilterRecommendMapper {
   public IndexFilterRequest toIndexRequest(Filter filter) {
     return new IndexFilterRequest(
         String.valueOf(filter.getId()),      // 1. filter_id
-        filter.getName(),                    // 2. name (✅ 누락된 필드 추가)
+        filter.getName(),                    // 2. name
         filter.getEditedImageUrl(),          // 3. image_url
 
         // 4. tags

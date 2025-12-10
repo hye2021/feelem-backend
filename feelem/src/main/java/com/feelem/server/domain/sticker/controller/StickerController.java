@@ -25,7 +25,7 @@ public class StickerController {
   private final StickerService stickerService;
 
   /**
-   * ✅ 1) 일반/브러시 스티커 업로드 (파일 전송)
+   * 1) 일반/브러시 스티커 업로드 (파일 전송)
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<StickerDto.Response> createSticker(
@@ -33,11 +33,11 @@ public class StickerController {
       @RequestParam("type") StickerType type) {
 
     try {
-      // 1️⃣ 이미지 업로드
+      // 1️이미지 업로드
       String imageUrl = uploadService.uploadSticker(file);
-      log.info("✔️ 스티커 업로드 완료: {}", imageUrl);
+//      log.info("✔️ 스티커 업로드 완료: {}", imageUrl);
 
-      // 2️⃣ DB 등록
+      // 2 DB 등록
       Sticker sticker = stickerService.createSticker(type, imageUrl);
       return ResponseEntity.status(HttpStatus.CREATED).body(new StickerDto.Response(sticker));
 
@@ -48,7 +48,7 @@ public class StickerController {
   }
 
   /**
-   * ✅ 2) AI 스티커 등록 (이미지 URL만 전달)
+   * 2) AI 스티커 등록 (이미지 URL만 전달)
    */
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<StickerDto.Response> createAISticker(@RequestBody StickerDto.CreateRequest request) {
@@ -60,7 +60,7 @@ public class StickerController {
       }
 
       Sticker sticker = stickerService.createSticker(request.getType(), request.getImageUrl());
-      log.info("🤖 AI 스티커 등록 완료: {}", request.getImageUrl());
+//      log.info("🤖 AI 스티커 등록 완료: {}", request.getImageUrl());
       return ResponseEntity.status(HttpStatus.CREATED).body(new StickerDto.Response(sticker));
 
     } catch (Exception e) {
@@ -70,7 +70,7 @@ public class StickerController {
   }
 
   /**
-   * ✅ 스티커 전체 조회
+   * 스티커 전체 조회
    */
   @GetMapping
   public ResponseEntity<List<StickerDto.Response>> getStickers() {
@@ -79,7 +79,7 @@ public class StickerController {
   }
 
   /**
-   * ✅ 스티커 삭제
+   * 스티커 삭제
    */
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteSticker(@PathVariable Long id) {

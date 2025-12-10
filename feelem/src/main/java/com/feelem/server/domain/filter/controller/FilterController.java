@@ -25,45 +25,26 @@ public class FilterController {
 
   private final FilterService filterService;
 
-  // ---------------------------------------------------------
   // 기존 코드 유지 (필터 생성)
-  // ---------------------------------------------------------
   @PostMapping
   public ResponseEntity<FilterResponse> createFilter(@RequestBody FilterCreateRequest request) {
     Filter filter = filterService.createFilter(request);
     FilterResponse response = filterService.getFilter(filter.getId());
 
-    log.info("✔️ 필터가 생성되었습니다: {}", response);
+//    log.info("✔️ 필터가 생성되었습니다: {}", response);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
-  // ---------------------------------------------------------
   // 기존 코드 유지 (필터 상세 조회)
-  // ---------------------------------------------------------
   @GetMapping("/{filterId}")
   public ResponseEntity<FilterResponse> getFilter(@PathVariable Long filterId) {
     FilterResponse response = filterService.getFilter(filterId);
 
-    log.info("✔️ 필터가 조회되었습니다: filterId={}", filterId);
-
-    // filter response의 모든 정보 로그찍기
-//    log.info("    ➕필터id: {}", filterId);
-//    log.info("    ➕필터이름: {}",response.getName());
-//    log.info("    ➕필터제작자: {}",response.getCreator());
-//    log.info("    ➕필터가격: {}",response.getPrice());
-//    log.info("    ➕필터태그: {}",response.getTags());
-//    log.info("    ➕필터스티커이미지URL: {}",response.getStickerImageNoFaceUrl());
-    log.info("    ➕필터얼굴인식스티커 개수: {}",response.getStickers().size());
-//    var stickers = response.getStickers();
-//    for (int i = 0; i < stickers.size(); i++) {
-//      log.info("        ➕{}번째 얼굴인식 스티커 이미지 경로: {}", i + 1, stickers.get(i).getStickerImageUrl());
-//    }
+//    log.info("✔️ 필터가 조회되었습니다: filterId={}", filterId);
   return ResponseEntity.ok(response);
   }
 
-  // ---------------------------------------------------------
   // 기존 코드 유지 (가격 업데이트)
-  // ---------------------------------------------------------
   @PutMapping("/{filterId}/price")
   public ResponseEntity<Void> updatePrice(
       @PathVariable Long filterId,
@@ -71,46 +52,39 @@ public class FilterController {
   ) {
     filterService.updatePrice(filterId, request.getPrice());
 
-    log.info("✔️ 필터 가격이 업데이트되었습니다: filterId={}, price={}", filterId, request.getPrice());
+//    log.info("✔️ 필터 가격이 업데이트되었습니다: filterId={}, price={}", filterId, request.getPrice());
 
     return ResponseEntity.ok().build();
   }
 
-  // ---------------------------------------------------------
   // 기존 코드 유지 (필터 삭제)
-  // ---------------------------------------------------------
   @DeleteMapping("/{filterId}")
   public ResponseEntity<Void> deleteFilter(@PathVariable Long filterId) {
     filterService.deleteFilter(filterId);
 
-    log.info("✔️ 필터가 삭제되었습니다: filterId={}", filterId);
+//    log.info("✔️ 필터가 삭제되었습니다: filterId={}", filterId);
 
     return ResponseEntity.noContent().build();
   }
 
-  // ---------------------------------------------------------
   // 1) 현재 필터를 북마크로 설정(on/off)
-  // ---------------------------------------------------------
   @PutMapping("/{filterId}/bookmark")
   public ResponseEntity<Boolean> toggleBookmark(@PathVariable Long filterId) {
 
-    // 1) 북마크 상태 변경
     boolean result = filterService.toggleBookmark(filterId);
 
-    log.info("⭐ 북마크 토글 완료: filterId={}, bookmark={}", filterId, result);
+//    log.info("⭐ 북마크 토글 완료: filterId={}, bookmark={}", filterId, result);
 
     return ResponseEntity.ok(result);
   }
 
-  // ---------------------------------------------------------
   // 3) 필터 구매 or 사용
-  // ---------------------------------------------------------
   @PostMapping("/{filterId}/usage")
   public ResponseEntity<Void> useFilter(@PathVariable Long filterId) {
 
     filterService.useFilter(filterId);
 
-    log.info("⭐ 필터 사용/구매 완료: filterId={}", filterId);
+//    log.info("⭐ 필터 사용/구매 완료: filterId={}", filterId);
 
     return ResponseEntity.noContent().build();
   }

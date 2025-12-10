@@ -29,7 +29,7 @@ public class StickerService {
         .stickerType(type)
         .build();
 
-    System.out.println("✅ Sticker inserted ID: " + sticker.getId());
+//    System.out.println("✅ Sticker inserted ID: " + sticker.getId());
 
     return stickerRepository.save(sticker);
   }

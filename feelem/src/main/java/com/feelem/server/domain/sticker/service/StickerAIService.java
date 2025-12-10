@@ -30,7 +30,7 @@ public class StickerAIService {
 
   public Map<String, Object> generateSticker(String prompt) throws IOException {
     try {
-      log.info("🎨 AI 서버에 스티커 생성 요청: {}", prompt);
+//      log.info("🎨 AI 서버에 스티커 생성 요청: {}", prompt);
 
       String url = aiServerUrl + "/gensticker";
       Map<String, String> body = Map.of("prompt_ko", prompt);
@@ -57,7 +57,7 @@ public class StickerAIService {
         result.put("imageUrl", uploadedFile.getFileUrl());
         result.put("fromAIServer", true);
 
-        log.info("✅ AI 서버 스티커 생성 성공: {}", s3Url);
+//        log.info("✅ AI 서버 스티커 생성 성공: {}", s3Url);
         return result;
       }
 
@@ -73,7 +73,7 @@ public class StickerAIService {
   private Map<String, Object> generateDummySticker(String prompt) {
     String dummyUrl = "https://feelem-s3-bucket.s3.ap-northeast-2.amazonaws.com/static/dummy.jpg";
 
-    // ✅ 이미 존재하는 더미 파일이 있다면 재사용
+    // 이미 존재하는 더미 파일이 있다면 재사용
     Optional<UploadedFile> existing = uploadRepository.findByFileUrl(dummyUrl);
     UploadedFile uploadedFile = existing.orElseGet(() -> uploadRepository.save(new UploadedFile(dummyUrl)));
 
@@ -82,7 +82,7 @@ public class StickerAIService {
     response.put("imageUrl", uploadedFile.getFileUrl());
     response.put("dummy", true);
 
-    log.info("🪄 더미 스티커 생성 완료 (프롬프트: {})", prompt);
+//    log.info("🪄 더미 스티커 생성 완료 (프롬프트: {})", prompt);
     return response;
   }
 

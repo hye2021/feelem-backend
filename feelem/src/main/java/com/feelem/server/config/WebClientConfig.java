@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-  @Value("${recommend.server.url}")
+  @Value("${feelem.recommend-server.url}")
   private String recommendServerUrl;
 
   @Bean

@@ -24,14 +24,12 @@ public class TestController {
   @Operation(summary = "인증된 사용자 정보 확인")
   @GetMapping("/me")
   public ResponseEntity<String> getMyInfo(@AuthenticationPrincipal OAuth2User oAuth2User) {
-    // JwtAuthenticationFilter에서 SecurityContext에 저장한 사용자 정보를 가져옵니다.
     String userId = oAuth2User.getName();
     return ResponseEntity.ok("인증 성공! 당신의 ID는: " + userId);
   }
 }
 
 
-// 요청 DTO를 내부 클래스로 간단히 정의
 @Getter
 @NoArgsConstructor
 class TokenReissueRequestDto {

@@ -42,7 +42,6 @@ public class SalesController {
       @RequestParam(name = "sortBy", defaultValue = "RECENT") SalesSortType sortBy,
       @PageableDefault(size = 10) Pageable pageable
   ) {
-    // Service가 Page 타입을 반환하므로, 변수와 ResponseEntity 타입도 Page로 맞춰줍니다.
     Page<SalesListResponse> response = salesService.getSalesFilterList(sortBy, pageable);
     return ResponseEntity.ok(response);
   }

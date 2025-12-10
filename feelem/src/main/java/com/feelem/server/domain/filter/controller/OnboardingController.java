@@ -22,7 +22,7 @@ public class OnboardingController {
 
 
   /**
-   * ✅ 온보딩 필터 전체 조회
+   * 온보딩 필터 전체 조회
    * - 온보딩 화면에서 선택지로 보여줄 필터 목록
    * - 내부적으로 Onboarding 엔티티에 연결된 Filter 정보 포함
    */
@@ -48,7 +48,7 @@ public class OnboardingController {
     public Long getFilterId() { return filterId; }
   }
 
-  // ✅ 응답 DTO (GET /filters에서 사용)
+  // 응답 DTO (GET /filters에서 사용)
   public static class OnboardingFilterResponse {
     private Long onboardingId;
     private Long filterId;

@@ -21,30 +21,27 @@ public class AuthController {
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
 
-  // ✅ 웹 로그인 성공 테스트 페이지 (유지)
+  // 웹 로그인 성공 테스트 페이지
   @GetMapping("/login/success")
   public String loginSuccess() {
     log.info("✅ 웹 로그인 성공 페이지에 접근했습니다.");
     return "<h1>로그인 성공 🎉</h1><p>Feel'em OAuth2 로그인 테스트 페이지</p>";
   }
 
-  // ✅ 토큰 재발급
+  // 토큰 재발급
   @PostMapping("/auth/reissue")
   public ResponseEntity<TokenInfo> reissue(@RequestBody TokenRequestDto tokenRequestDto) {
     TokenInfo tokenInfo = authService.reissue(tokenRequestDto.getRefreshToken());
     return ResponseEntity.ok(tokenInfo);
   }
 
-  // ✅ 안드로이드 Google 로그인
+  // 안드로이드 Google 로그인
   @PostMapping("/auth/google")
   public ResponseEntity<TokenInfo> googleLogin(@RequestBody Map<String, String> body) throws Exception {
-//    log.info("✅ 구글 로그인 요청이 들어왔습니다. 요청 바디: {}", body);
-
     String idToken = body.get("idToken");
     TokenInfo tokenInfo = authService.loginWithGoogle(idToken);
 
-    log.info("✅ 구글 로그인이 성공되었습니다.");
-//    log.info("✅ 발급된 JWT 정보: {}", tokenInfo);
+//    log.info("✅ 구글 로그인이 성공되었습니다.");
 
     return ResponseEntity.ok(tokenInfo);
   }

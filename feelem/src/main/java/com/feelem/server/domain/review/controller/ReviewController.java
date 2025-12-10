@@ -31,11 +31,11 @@ public class ReviewController {
       @RequestParam("socialType") String socialType
   ) {
     try {
-      // 1️⃣ 이미지 S3 업로드 (기존에 있던 uploadFilterReview 메서드 활용)
+      // 1️이미지 S3 업로드 (기존에 있던 uploadFilterReview 메서드 활용)
       String imageUrl = uploadService.uploadFilterReview(file);
-      log.info("✔️ 리뷰 이미지 업로드 완료: {}", imageUrl);
+//      log.info("✔️ 리뷰 이미지 업로드 완료: {}", imageUrl);
 
-      // 2️⃣ 리뷰 생성 서비스 호출 (URL과 데이터 전달)
+      // 2️리뷰 생성 서비스 호출 (URL과 데이터 전달)
       ReviewResponse response = reviewService.createReview(filterId, socialType, imageUrl);
 
       return ResponseEntity.ok(response);
@@ -52,7 +52,7 @@ public class ReviewController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
 
-    log.info("⭐ 내가 작성한 리뷰 목록 조회: page={}, size={}", page, size);
+//    log.info("⭐ 내가 작성한 리뷰 목록 조회: page={}, size={}", page, size);
 
     return ResponseEntity.ok(reviewService.getMyReviews(page, size));
   }
@@ -63,7 +63,7 @@ public class ReviewController {
 
     ReviewResponse response = reviewService.getReviewById(reviewId);
 
-    log.info("⭐ 리뷰 조회: reviewId={}", reviewId);
+//    log.info("⭐ 리뷰 조회: reviewId={}", reviewId);
 
     return ResponseEntity.ok(response);
   }
@@ -74,7 +74,7 @@ public class ReviewController {
 
     reviewService.deleteReview(reviewId);
 
-    log.info("🗑 리뷰 삭제됨: reviewId={}", reviewId);
+//    log.info("🗑 리뷰 삭제됨: reviewId={}", reviewId);
 
     return ResponseEntity.noContent().build();
   }

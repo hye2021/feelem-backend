@@ -124,8 +124,6 @@ public class Filter {
     this.totalSalesAmount = 0L;
   }
 
-  // [중요] 동시성 처리를 위해 increase/decrease 메서드는 Entity에서 제거하고 Repository 쿼리로 처리
-
   // 단순 상태 변경 메서드는 유지
   public void softDelete() {
     this.isDeleted = true;

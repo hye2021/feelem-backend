@@ -27,7 +27,7 @@ public class ReviewListController {
 
     List<ReviewResponse> previews = reviewService.getReviewPreview(filterId);
 
-    log.info("⭐ 리뷰 미리보기 조회: filterId={}, count={}", filterId, previews.size());
+//    log.info("⭐ 리뷰 미리보기 조회: filterId={}, count={}", filterId, previews.size());
 
     return ResponseEntity.ok(previews);
   }
@@ -39,7 +39,7 @@ public class ReviewListController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
 
-    log.info("⭐ 필터 리뷰 목록 조회: filterId={}, page={}, size={}", filterId, page, size);
+//    log.info("⭐ 필터 리뷰 목록 조회: filterId={}, page={}, size={}", filterId, page, size);
 
     return ResponseEntity.ok(reviewService.getReviewsByFilter(filterId, page, size));
   }

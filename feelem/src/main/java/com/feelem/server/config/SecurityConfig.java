@@ -33,7 +33,7 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
-            .anyRequest().permitAll() // ✅ 모든 요청 허용
+            .anyRequest().permitAll() // 모든 요청 허용
         );
     return http.build();
   }
@@ -57,13 +57,13 @@ public class SecurityConfig {
             ).permitAll()
             .anyRequest().authenticated()
         )
-        // ✅ formLogin, httpBasic, oauth2Login 완전히 비활성화
+        // formLogin, httpBasic, oauth2Login 완전히 비활성화
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
         .logout(AbstractHttpConfigurer::disable)
-        .oauth2Login(AbstractHttpConfigurer::disable)  // ✅ 이 줄이 가장 중요
+        .oauth2Login(AbstractHttpConfigurer::disable)  // 이 줄이 가장 중요
 
-        // ✅ CORS 허용
+        // CORS 허용
         .cors(cors -> cors.configurationSource(request -> {
           var corsConfig = new org.springframework.web.cors.CorsConfiguration();
           corsConfig.setAllowedOrigins(java.util.List.of(
@@ -78,7 +78,7 @@ public class SecurityConfig {
           return corsConfig;
         }));
 
-    // ✅ JWT 인증 필터 등록
+    // JWT 인증 필터 등록
     http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

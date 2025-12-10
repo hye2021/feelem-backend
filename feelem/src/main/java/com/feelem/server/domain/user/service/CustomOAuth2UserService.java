@@ -61,15 +61,15 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
   }
 
   private User saveOrUpdate(OAuthAttributes attributes) {
-    // 1. DB에서 유저를 찾습니다.
+    // 1. DB에서 유저를 찾음
     User user = userRepository.findByProviderAndProviderId(
             attributes.getProvider(),
             attributes.getProviderId())
         .map(entity -> entity.update(attributes.getNickname())) // A. 기존 유저라면 닉네임만 수정
         .orElseGet(() -> attributes.toEntity()); // B. 신규 유저라면 객체 생성 (이때 생성자에서 Social, Point도 자동 생성됨)
 
-    // 2. 유저를 저장합니다.
-    // (User 엔티티의 Cascade 설정 덕분에 연결된 Social, Point도 DB에 같이 저장됩니다!)
+    // 2. 유저를 저장
+    // (User 엔티티의 Cascade 설정 덕분에 연결된 Social, Point도 DB에 같이 저장)
     return userRepository.save(user);
   }
 }

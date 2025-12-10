@@ -18,6 +18,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +31,10 @@ public class AuthServiceImpl implements AuthService {
   private final UserRepository userRepository;
   private final JwtTokenProvider jwtTokenProvider;
 
-  // ✅ 기존 RefreshToken 재발급
+  @Value("${google.client-id}")
+  private String googleClientId;
+
+  // 기존 RefreshToken 재발급
   @Transactional
   @Override
   public TokenInfo reissue(String refreshToken) {
@@ -55,19 +59,19 @@ public class AuthServiceImpl implements AuthService {
     return newTokenInfo;
   }
 
-  // ✅ 안드로이드 구글 로그인
+  // 안드로이드 구글 로그인
   @Transactional
   @Override
   public TokenInfo loginWithGoogle(String idTokenString) throws Exception {
 //    log.info("📥 Received Google ID Token: {}", idTokenString);
 
-    // 1️⃣ Google ID Token 검증
+    // 1️ Google ID Token 검증
     GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
         new NetHttpTransport(),
         JacksonFactory.getDefaultInstance()
     )
         .setAudience(Collections.singletonList(
-            "27326569433-37asc7ec60uq68sujfe3ooaud6i9puo7.apps.googleusercontent.com" // ✅ Client ID
+            googleClientId
         ))
         .setIssuer("https://accounts.google.com")
         .build();
@@ -78,16 +82,14 @@ public class AuthServiceImpl implements AuthService {
       throw new IllegalArgumentException("Invalid Google ID Token");
     }
 
-    // 2️⃣ 사용자 정보 추출
+    // 2️ 사용자 정보 추출
     GoogleIdToken.Payload payload = idToken.getPayload();
     String email = payload.getEmail();
     String nickname = (String) payload.get("name");
     String providerId = payload.getSubject();
     String provider = "google";
 
-//    log.info("✅ Google verified user: email={}, nickname={}, providerId={}", email, nickname, providerId);
-
-    // 3️⃣ 사용자 등록 또는 조회
+    // 3️ 사용자 등록 또는 조회
     User user = userRepository.findByEmail(email)
         .orElseGet(() -> {
           User newUser = User.builder()
@@ -100,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
           return userRepository.save(newUser);
         });
 
-    // 4️⃣ JWT 발급
+    // 4 JWT 발급
     Authentication authentication = new UsernamePasswordAuthenticationToken(
         user.getEmail(),
         null,
@@ -109,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
 
     TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication, user.getId());
     user.updateRefreshToken(tokenInfo.getRefreshToken());
-    userRepository.save(user); // ✅ 업데이트 반영
+    userRepository.save(user);
 
 //    log.info("🎫 JWT generated for userId {} -> {}", user.getId(), tokenInfo.getAccessToken());
     return tokenInfo;

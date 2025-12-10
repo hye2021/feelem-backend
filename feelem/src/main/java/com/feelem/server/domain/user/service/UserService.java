@@ -46,7 +46,7 @@ public class UserService {
 //    log.info(" 현재 요청 보낸 사용자 조회 (JWT기반)");
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    // ✅ OAuth 로그인한 유저는 SecurityContext에서 email 기반으로 가져오기
+    // OAuth 로그인한 유저는 SecurityContext에서 email 기반으로 가져오기
     if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
       throw new RuntimeException("로그인이 필요합니다.");
     }
@@ -54,13 +54,13 @@ public class UserService {
     String name = authentication.getName();
 //    log.info("👩‍🦰 현재 요청 하는 user의 id: {}", name);
 
-    // ✅ 숫자인 경우 ID로 조회
+    // 숫자인 경우 ID로 조회
     try {
       Long userId = Long.parseLong(name);
       return userRepository.findById(userId)
           .orElseThrow(() -> new RuntimeException("User not found"));
     } catch (NumberFormatException e) {
-      // ✅ 이메일일 경우 기존 방식 유지
+      // 이메일일 경우 기존 방식 유지
       return userRepository.findByEmail(name)
           .orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -77,7 +77,7 @@ public class UserService {
     User user = userRepository.findByRefreshToken(refreshToken)
         .orElseThrow(() -> new IllegalArgumentException("Refresh Token에 해당하는 사용자가 없습니다."));
 
-    // 3. ⬇️ DB에서 찾은 사용자 정보로 새로운 Authentication 객체를 생성한다.
+    // 3. DB에서 찾은 사용자 정보로 새로운 Authentication 객체를 생성한다.
     Collection<? extends GrantedAuthority> authorities =
         Collections.singleton(new SimpleGrantedAuthority(user.getRoleKey()));
 

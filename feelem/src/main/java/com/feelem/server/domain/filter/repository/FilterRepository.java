@@ -73,10 +73,6 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
       @Param("tagCount") Long tagCount
   );
 
-  // ==========================================
-  //  동시성 처리를 위한 직접 Update 쿼리 (추가됨)
-  // ==========================================
-
   /**
    * 저장(북마크) 수 1 증가
    * clearAutomatically = true: 쿼리 수행 후 영속성 컨텍스트를 비워 데이터 불일치 방지

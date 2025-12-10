@@ -34,8 +34,8 @@ public class FilterListController {
       @PageableDefault(size = 20) Pageable pageable
   ) {
 
-    log.info("✔️ 홈 화면용 최신 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("✔️ 홈 화면용 최신 필터 조회: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(filterService.getRecentFilters(pageable));
   }
@@ -46,8 +46,8 @@ public class FilterListController {
       @PageableDefault(size = 20) Pageable pageable
   ) {
 
-    log.info("✔️ 홈 화면용 인기 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("✔️ 홈 화면용 인기 필터 조회: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(filterService.getHotFilters(pageable));
   }
@@ -57,8 +57,8 @@ public class FilterListController {
   public ResponseEntity<Page<FilterListResponse>> getRandomFilters(
       @PageableDefault(size = 20) Pageable pageable
   ) {
-    log.info("✔️ 홈 화면용 랜덤 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("✔️ 홈 화면용 랜덤 필터 조회: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(filterService.getRandomFilters(pageable));
   }
@@ -68,16 +68,16 @@ public class FilterListController {
   public ResponseEntity<Page<FilterListResponse>> getHomeRecommendations(
       @PageableDefault(size = 20) Pageable pageable
   ) {
-    log.info("🤖 홈 화면 AI 추천 요청: page={}", pageable.getPageNumber());
+//    log.info("🤖 홈 화면 AI 추천 요청: page={}", pageable.getPageNumber());
 
     // Service는 List를 반환하므로, Page 인터페이스로 감싸서 반환 (API 통일성 유지)
     List<FilterListResponse> result = filterService.getHomeRecommendations(pageable);
 
-    // Total Count는 AI 특성상 정확히 알 수 없거나 무한하므로,
+    // Total Count는 AI 특성상 정확히 알 수 없거나 무한
     // 현재 페이지 데이터 크기 + (다음 페이지가 있다고 가정하기 위해 넉넉한 수)로 설정하거나
     // 단순히 result.size()로 설정하면 '마지막 페이지'로 인식될 수 있음.
-    // 무한 스크롤을 위해 '항상 다음이 있다'고 가정하려면 total을 크게 잡는 것이 팁입니다.
-    long logicalTotal = (result.isEmpty()) ? 0 : 2000L; // 예: 충분히 큰 수
+    // 무한 스크롤을 위해 '항상 다음이 있다'고 가정하려면 total을 크게 잡을 것
+    long logicalTotal = (result.isEmpty()) ? 0 : 2000L;
 
     return ResponseEntity.ok(new PageImpl<>(result, pageable, logicalTotal));
   }
@@ -90,8 +90,8 @@ public class FilterListController {
       @RequestParam(name = "sort", defaultValue = "ACCURACY") FilterSortType sortType,
       @PageableDefault(size = 20) Pageable pageable
   ) {
-    log.info("🔍 검색 요청: query='{}', type={}, sort={}, page={}",
-        query, searchType, sortType, pageable.getPageNumber());
+//    log.info("🔍 검색 요청: query='{}', type={}, sort={}, page={}",
+//        query, searchType, sortType, pageable.getPageNumber());
 
     List<FilterListResponse> result = filterService.searchFilters(query, searchType, sortType, pageable);
 
@@ -109,8 +109,8 @@ public class FilterListController {
 
     Page<FilterListResponse> responses = filterService.getBookmarkedFilters(pageable);
 
-    log.info("⭐ 북마크 목록 조회 요청: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("⭐ 북마크 목록 조회 요청: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(responses);
   }
@@ -123,8 +123,8 @@ public class FilterListController {
 
     Page<FilterListResponse> responses = filterService.getUsedFilters(pageable);
 
-    log.info("⭐ 사용/구매 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("⭐ 사용/구매 필터 조회: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(responses);
   }
@@ -137,8 +137,8 @@ public class FilterListController {
 
     Page<FilterListResponse> responses = filterService.getMyFilters(pageable);
 
-    log.info("⭐ 내가 올린 필터 조회: page={}, size={}",
-        pageable.getPageNumber(), pageable.getPageSize());
+//    log.info("⭐ 내가 올린 필터 조회: page={}, size={}",
+//        pageable.getPageNumber(), pageable.getPageSize());
 
     return ResponseEntity.ok(responses);
   }

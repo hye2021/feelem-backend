@@ -78,7 +78,7 @@ public class UploadService {
   @Transactional
   public void delete(String fileUrl) {
     s3Uploader.delete(fileUrl);
-    // (선택) DB에서도 삭제하고 싶다면:
+    // DB에서도 삭제하고 싶다면:
     // uploadRepository.findByFileUrl(fileUrl).ifPresent(uploadRepository::delete);
   }
 }

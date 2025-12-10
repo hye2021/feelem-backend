@@ -54,7 +54,7 @@ public class SalesService {
         .mapToLong(FilterTransaction::getAmount)
         .sum();
 
-    // 2. [수정됨] 정산 금액 계산 (정책: 1포인트당 5원 정산)
+    // 2. 정산 금액 계산 (정책: 1포인트당 5원 정산)
     // 1,000 포인트 * 5원 = 5,000원 정산
     long settlementAmount = totalSoldPoints * 5;
 
@@ -131,10 +131,6 @@ public class SalesService {
         .salesGraphData(graphData)
         .build();
   }
-
-  // =========================================================================
-  //  Private Helpers
-  // =========================================================================
 
   /**
    * 기간(Enum)에 따른 StartDate, EndDate 계산

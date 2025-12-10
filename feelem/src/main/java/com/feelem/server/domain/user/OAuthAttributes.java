@@ -53,7 +53,7 @@ public class OAuthAttributes {
 
   public User toEntity() {
     return User.builder()
-        .email(email != null ? email : UUID.randomUUID() + "@tempuser.com") // ✅ null 방지
+        .email(email != null ? email : UUID.randomUUID() + "@tempuser.com") // null 방지
         .nickname(nickname)
         .provider(provider)
         .providerId(providerId)

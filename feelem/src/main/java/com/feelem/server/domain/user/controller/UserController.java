@@ -30,7 +30,7 @@ public class UserController {
   public ResponseEntity<UserDto.ProfileResponse> getUserProfile(@PathVariable Long userId) {
     UserDto.ProfileResponse response = new UserDto.ProfileResponse(userService.findById(userId));
 
-    log.info("❕ 사용자 프로필이 조회되었습니다: {}", response);
+//    log.info("❕ 사용자 프로필이 조회되었습니다: {}", response);
 
     return ResponseEntity.ok(response);
   }
@@ -41,7 +41,7 @@ public class UserController {
     String nickname = request.get("nickname");
     userService.updateNickname(nickname);
 
-    log.info("✔️ 닉네임이 설정/변경되었습니다: {}", nickname);
+//    log.info("✔️ 닉네임이 설정/변경되었습니다: {}", nickname);
 
     return ResponseEntity.ok().build();
   }
@@ -53,7 +53,7 @@ public class UserController {
   ) {
     boolean exists = userService.isNicknameDuplicate(nickname);
 
-    log.info("✔️ 닉네임 중복 여부 확인: {} -> {}", nickname, exists);
+//    log.info("✔️ 닉네임 중복 여부 확인: {} -> {}", nickname, exists);
 
     return ResponseEntity.ok(Map.of("exists", exists));
   }
@@ -64,7 +64,7 @@ public class UserController {
   public ResponseEntity<Map<String, Boolean>> checkUserExists() {
     boolean exists = userService.isRegisteredUser();
 
-    log.info("✔️ 가입된 회원 여부 확인: {}", exists);
+//    log.info("✔️ 가입된 회원 여부 확인: {}", exists);
 
     return ResponseEntity.ok(Map.of("exists", exists));
   }
@@ -75,7 +75,7 @@ public class UserController {
 
     UserMypageResponse response = userService.getMypage();
 
-    log.info("🏠 마이페이지 정보가 조회되었습니다: {}", response);
+//    log.info("🏠 마이페이지 정보가 조회되었습니다: {}", response);
 
     return ResponseEntity.ok(response);
   }

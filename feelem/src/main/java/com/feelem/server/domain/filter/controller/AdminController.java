@@ -23,10 +23,10 @@ public class AdminController {
   private final RecommendServingClient aiClient;
   private final FilterRecommendMapper aiMapper;
 
-  // 🚀 [중요] 기존 필터 데이터를 전부 AI 서버로 전송하는 API
+  // 기존 필터 데이터를 전부 AI 서버로 전송하는 API
   @PostMapping("/sync-filters")
   public ResponseEntity<String> syncAllFiltersToAi() {
-    log.info("🔄 기존 필터 데이터 AI 서버 동기화 시작...");
+//    log.info("🔄 기존 필터 데이터 AI 서버 동기화 시작...");
 
     // 1. 삭제되지 않은 모든 필터 조회
     List<Filter> allFilters = filterRepository.findAllByIsDeletedFalse();
@@ -41,13 +41,13 @@ public class AdminController {
         // 너무 빠르게 보내면 과부하 걸릴 수 있으니 살짝 텀을 줌 (선택사항)
         Thread.sleep(50);
       } catch (Exception e) {
-        log.error("❌ 필터 ID {} 인덱싱 실패: {}", filter.getId(), e.getMessage());
+//        log.error("❌ 필터 ID {} 인덱싱 실패: {}", filter.getId(), e.getMessage());
         failCount.getAndIncrement();
       }
     }
 
     String result = String.format("✅ 동기화 완료! 성공: %d건, 실패: %d건", successCount.get(), failCount.get());
-    log.info(result);
+//    log.info(result);
     return ResponseEntity.ok(result);
   }
 }

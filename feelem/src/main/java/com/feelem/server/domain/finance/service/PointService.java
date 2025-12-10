@@ -29,16 +29,16 @@ public class PointService {
     Point point = pointRepository.findByUserId(user.getId())
         .orElseThrow(() -> new EntityNotFoundException("포인트 정보가 없습니다."));
 
-    // ⭐ 현금 → 포인트 환산 (예: 1000 → 100p)
+    // 현금 → 포인트 환산 (예: 1000 → 100p)
     int convertedPoint = cash / 10;
 
-    // ⭐ 새로운 잔여 포인트
+    // 새로운 잔여 포인트
     int newBalance = point.getAmount() + convertedPoint;
 
-    // ⭐ 포인트 업데이트
+    // 포인트 업데이트
     point.setAmount(newBalance);
 
-    // ⭐ 거래 로그 기록 (CashTransaction)
+    // 거래 로그 기록 (CashTransaction)
     CashTransaction tx = CashTransaction.builder()
         .user(user)
         .type(CashTransactionType.CHARGE) // 💡 고정

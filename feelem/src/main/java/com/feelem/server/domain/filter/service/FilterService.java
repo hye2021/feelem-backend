@@ -78,13 +78,13 @@ public class FilterService {
    * 필터 생성
    */
   public Filter createFilter(FilterCreateRequest request) {
-    log.info("🚀 [FilterService] createFilter 호출됨");
+//    log.info("🚀 [FilterService] createFilter 호출됨");
 
     // 1. 스티커 리스트 상태 로그
     if (request.getStickers() == null) {
       log.error("🚨 [문제발견] request.getStickers()가 NULL입니다!");
     } else {
-      log.info("🔍 [데이터확인] request.getStickers() 크기: {}개", request.getStickers().size());
+//      log.info("🔍 [데이터확인] request.getStickers() 크기: {}개", request.getStickers().size());
       if (request.getStickers().isEmpty()) {
         log.warn("⚠️ [데이터확인] 리스트는 존재하지만 비어있습니다 (Size=0).");
       }
@@ -114,7 +114,7 @@ public class FilterService {
         .social(social)
         .build();
     Filter savedFilter = filterRepository.save(filter);
-    log.info("✔️ 필터 기본 정보 저장 완료. ID: {}", savedFilter.getId());
+//    log.info("✔️ 필터 기본 정보 저장 완료. ID: {}", savedFilter.getId());
 
     // 태그 등록
     List<String> tagNames = request.getTags();
@@ -130,7 +130,7 @@ public class FilterService {
     List<FaceStickerPlacement> savedStickers = new ArrayList<>();
 
     if (request.getStickers() != null && !request.getStickers().isEmpty()) {
-      log.info("🔄 스티커 저장 반복문 진입 (총 {}개)", request.getStickers().size());
+//      log.info("🔄 스티커 저장 반복문 진입 (총 {}개)", request.getStickers().size());
 
       for (FaceSticker placement : request.getStickers()) {
         try {
@@ -147,7 +147,7 @@ public class FilterService {
               placement.getRot()
           );
 
-          log.info("   💾 스티커 저장 시도 - Sticker ID: {}, relX: {}", placement.getStickerId(), placement.getRelX());
+//          log.info("   💾 스티커 저장 시도 - Sticker ID: {}, relX: {}", placement.getStickerId(), placement.getRelX());
 
           faceStickerPlacementRepository.save(facePlacement);
           savedStickers.add(facePlacement);
@@ -158,15 +158,15 @@ public class FilterService {
         }
       }
     } else {
-      log.info("⏭️ 저장할 스티커가 없어서 반복문을 건너뜁니다.");
+//      log.info("⏭️ 저장할 스티커가 없어서 반복문을 건너뜁니다.");
     }
 
-    log.info("✅ 필터 생성 최종 완료. 저장된 스티커 수: {}", savedStickers.size());
+//    log.info("✅ 필터 생성 최종 완료. 저장된 스티커 수: {}", savedStickers.size());
 
     // AI 추천 서버에 인덱싱 요청
     try {
       aiClient.indexFilter(aiMapper.toIndexRequest(savedFilter));
-      log.info("🤖 AI Server Indexing Requested for Filter ID: {}", savedFilter.getId());
+//      log.info("🤖 AI Server Indexing Requested for Filter ID: {}", savedFilter.getId());
     } catch (Exception e) {
       log.warn("⚠️ AI Indexing Failed: {}", e.getMessage());
     }
@@ -248,9 +248,7 @@ public class FilterService {
     // 최종 결과를 담을 리스트
     List<Filter> filters = new ArrayList<>();
 
-    // =================================================================
     // 1. 검색 타입에 따른 데이터 확보
-    // =================================================================
     if (searchType == SearchType.TAG) {
       // [A] 태그 검색
       List<String> tags = List.of(query.split(","));
@@ -288,16 +286,11 @@ public class FilterService {
       return Collections.emptyList();
     }
 
-    // =================================================================
     // 2. 정렬 로직 (메모리 정렬)
-    // =================================================================
     Stream<Filter> stream = filters.stream();
 
     switch (sortType) {
       case ACCURACY -> {
-        // 자연어 검색일 경우: 이미 위에서 [제목 일치 -> AI 랭킹] 순서로 합쳤으므로
-        // 별도의 정렬을 하지 않는 것이 '정확도 순'입니다.
-        // 단, 태그 검색일 경우엔 최신순으로 Fallback
         if (searchType == SearchType.TAG) {
           stream = stream.sorted(Comparator.comparing(Filter::getCreatedAt).reversed());
         }
@@ -317,12 +310,7 @@ public class FilterService {
 
     List<Filter> sortedFilters = stream.collect(Collectors.toList());
 
-    // =================================================================
     // 3. 페이징 처리 (수동)
-    // =================================================================
-    // 두 리스트를 합쳤기 때문에 전체 개수가 달라졌습니다.
-    // 따라서 AI 페이징 대신, 합쳐진 리스트를 기준으로 자바에서 잘라줘야 합니다.
-
     int start = (int) pageable.getOffset();
     int end = Math.min((start + pageable.getPageSize()), sortedFilters.size());
 
@@ -342,7 +330,6 @@ public class FilterService {
 
   /**
    * 홈 화면 용 - 추천 필터 페이징 조회
-   * (수정사항: 요청 개수보다 넉넉하게 가져온 뒤, 삭제된 필터를 거르고 정확한 개수만큼 잘라서 반환)
    */
   @Transactional(readOnly = true)
   public List<FilterListResponse> getHomeRecommendations(Pageable pageable) {
@@ -362,7 +349,7 @@ public class FilterService {
         .map(String::valueOf)
         .collect(Collectors.toList());
 
-    log.info("🔍 [HomeRec] User ID: {}, 보낸 북마크 ID 목록: {}", user.getId(), likedFilterIds);
+//    log.info("🔍 [HomeRec] User ID: {}, 보낸 북마크 ID 목록: {}", user.getId(), likedFilterIds);
 
     // [Cold Start] 북마크가 없으면 최신순 반환
     if (likedFilterIds.isEmpty()) {
@@ -370,7 +357,7 @@ public class FilterService {
       return getRecentFilters(pageable).getContent();
     }
 
-    // 3. [핵심] 버퍼 전략: 삭제된 필터(좀비 필터)가 걸러질 것을 대비해 1.2배수(20% 더) 요청
+    // 3.버퍼 전략: 삭제된 필터(좀비 필터)가 걸러질 것을 대비해 1.2배수(20% 더) 요청
     // (예: 200개 필요 -> 240개 요청)
     int bufferSize = (int) (requestSize * 1.2);
     // 혹시 모를 상황 대비 최소 버퍼 확보
@@ -380,9 +367,9 @@ public class FilterService {
     // ⚠️ 주의: RecommendServingClient.getHomeRecommendations 메서드에도 int size 파라미터가 추가되어 있어야 합니다.
     List<String> recommendedIds = aiClient.getHomeRecommendations(likedFilterIds, page, bufferSize);
 
-    log.info("🤖 [HomeRec] AI 응답 ID 목록 (Size: {}): {}",
-        (recommendedIds != null ? recommendedIds.size() : "NULL"),
-        recommendedIds);
+//    log.info("🤖 [HomeRec] AI 응답 ID 목록 (Size: {}): {}",
+//        (recommendedIds != null ? recommendedIds.size() : "NULL"),
+//        recommendedIds);
 
     // 5. 결과가 없으면 최신순 Fallback
     if (recommendedIds == null || recommendedIds.isEmpty()) {
@@ -396,9 +383,9 @@ public class FilterService {
     List<Filter> filters = filterRepository.findByIdInAndIsDeletedFalse(ids);
 
     // [로그] 데이터 불일치 확인 (AI 추천수 vs DB 실제 존재수)
-    if (filters.size() < ids.size()) {
-      log.warn("🧟 좀비 필터 감지됨! (AI 추천: {}개 -> DB 유효: {}개)", ids.size(), filters.size());
-    }
+//    if (filters.size() < ids.size()) {
+//      log.warn("🧟 좀비 필터 감지됨! (AI 추천: {}개 -> DB 유효: {}개)", ids.size(), filters.size());
+//    }
 
     // 7. 정렬, DTO 변환 및 [핵심] 개수 맞추기 (Limit)
     return sortByIdListOrder(filters, recommendedIds).stream()
@@ -414,7 +401,7 @@ public class FilterService {
   public Page<FilterListResponse> getRecentFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderByCreatedAtDesc(pageable);
-    log.info("➡️ 홈화면 - 최신 필터 조회");
+//    log.info("➡️ 홈화면 - 최신 필터 조회");
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
@@ -425,7 +412,7 @@ public class FilterService {
   public Page<FilterListResponse> getHotFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderBySaveCountDesc(pageable);
-    log.info("➡️ 홈화면 - 인기 필터 조회");
+//    log.info("➡️ 홈화면 - 인기 필터 조회");
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
@@ -436,7 +423,7 @@ public class FilterService {
   public Page<FilterListResponse> getRandomFilters(Pageable pageable) {
     User user = userService.getCurrentUser();
     Page<Filter> page = filterRepository.findAllByIsDeletedFalseOrderByRandom(pageable);
-    log.info("➡️ 홈화면 - 랜덤 필터 조회");
+//    log.info("➡️ 홈화면 - 랜덤 필터 조회");
     return page.map(filter -> toFilterListResponse(filter, user));
   }
 
@@ -593,7 +580,7 @@ public class FilterService {
     // AI 추천 서버에 삭제 요청
     try {
       aiClient.deleteFilter(filterId);
-      log.info("🤖 AI Server Deletion Requested for Filter ID: {}", filterId);
+//      log.info("🤖 AI Server Deletion Requested for Filter ID: {}", filterId);
     } catch (Exception e) {
       log.warn("⚠️ AI Deletion Failed: {}", e.getMessage());
     }
@@ -645,7 +632,7 @@ public class FilterService {
       int balance = transaction.buyFirst(price, point.getAmount());
       point.setAmount(balance);
 
-      // [중요] 구매 수 증가 (Repository 쿼리 호출)
+      // 구매 수 증가 (Repository 쿼리 호출)
       filterRepository.increasePurchaseCountAndAmount(filterId, price);
 
       log.info("💰 Filter Purchase - Buyer: {}, Filter: {}, Amount: {}",
@@ -662,9 +649,9 @@ public class FilterService {
     // 트랜잭션 저장 (기록)
     filterTransactionRepository.save(transaction);
 
-    // [중요] 사용 수 증가 (Repository 쿼리 호출)
+    // 사용 수 증가 (Repository 쿼리 호출)
     filterRepository.increaseUseCount(filterId);
 
-    log.info("🛒 Filter Use Processed - User: {}, Filter: {}", user.getId(), filterId);
+//    log.info("🛒 Filter Use Processed - User: {}, Filter: {}", user.getId(), filterId);
   }
 }
