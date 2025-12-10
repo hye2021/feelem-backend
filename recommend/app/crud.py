@@ -13,7 +13,7 @@ import boto3
 import json
 
 # ----------------------------
-# ✅ S3 클라이언트
+# S3 클라이언트
 # ----------------------------
 if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
     # print("Initializing S3 client with Access Keys (Local Test Mode)")
@@ -29,13 +29,13 @@ else:
 
 
 # ----------------------------
-# ✅ 홈 추천 (Re-Rank)
+# 홈 추천 (Re-Rank)
 # ----------------------------
 async def get_ranked_home_recs(
     request: Request, filter_ids: List[str], page: int, size: int = 20
 ) -> List[str]:
 
-    # 🛑 1. ID가 없으면 DB 조회를 아예 시도하지 않음 (Cold Start 방어)
+    # 1. ID가 없으면 DB 조회를 아예 시도하지 않음 (Cold Start 방어)
     if not filter_ids:
         return []
 
@@ -86,13 +86,13 @@ async def get_ranked_home_recs(
 
 
 # ----------------------------
-# ✅ 텍스트 검색 (수정됨: size 파라미터 적용)
+# 텍스트 검색 (수정됨: size 파라미터 적용)
 # ----------------------------
 async def get_text_search_results(
     request: Request,
     query: str,
     page: int,
-    size: int = settings.PAGE_SIZE,  # 👈 [수정] size 파라미터 추가 (기본값 20)
+    size: int = settings.PAGE_SIZE,
 ) -> List[str]:
 
     model = request.app.state.clip_model
@@ -101,7 +101,6 @@ async def get_text_search_results(
     # 1. 최대 검색 개수 제한 (200개)
     max_limit = settings.PRIMARY_QUERY_COUNT
 
-    # ✅ [수정] 고정된 PAGE_SIZE 대신 입력받은 size 사용
     start = page * size
     end = start + size
 
@@ -135,7 +134,7 @@ async def get_text_search_results(
 
 
 # ----------------------------
-# ✅ 이미지 → 벡터 (V7: Numpy 변환)
+# 이미지 → 벡터 (V7: Numpy 변환)
 # ----------------------------
 def _fetch_and_vectorize_sync(model, image_url: str) -> List[float]:
     """
@@ -165,7 +164,7 @@ def _fetch_and_vectorize_sync(model, image_url: str) -> List[float]:
 
 
 # ----------------------------
-# ✅ 단일 필터 인덱싱 (수정됨: name 추가)
+# 단일 필터 인덱싱
 # ----------------------------
 async def index_single_filter(request: Request, data: IndexFilterRequest) -> None:
     chroma_collection = request.app.state.chroma_collection
@@ -185,7 +184,7 @@ async def index_single_filter(request: Request, data: IndexFilterRequest) -> Non
 
     # 2. 메타데이터 생성 (JSON 직렬화 필수)
     metadata = {
-        "name": data.name,  # ✅ DB에 이름 저장
+        "name": data.name,
         "tags": ", ".join(data.tags) if data.tags else "",
         "color_adjustments": json.dumps(data.color_adjustments),
     }

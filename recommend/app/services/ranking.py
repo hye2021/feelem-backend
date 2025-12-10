@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 
 # ---------------------------------------------------------
-# ✅ 헬퍼 함수: 자카드 유사도 (집합 간의 교집합 비율)
+# 자카드 유사도 (집합 간의 교집합 비율)
 # ---------------------------------------------------------
 def _jaccard_similarity(list1: List[str], list2: List[str]) -> float:
     set1 = set(list1)
@@ -22,7 +22,7 @@ def _jaccard_similarity(list1: List[str], list2: List[str]) -> float:
 
 
 # ---------------------------------------------------------
-# ✅ 스티커 유사도 계산 (현재 자바 DTO - Boolean 호환)
+# 스티커 유사도 계산 (현재 자바 DTO - Boolean 호환)
 # ---------------------------------------------------------
 def calculate_sticker_similarity(
     profile1: Dict[str, Any], profile2: Dict[str, Any]
@@ -66,7 +66,7 @@ def calculate_sticker_similarity(
 
 
 # ---------------------------------------------------------
-# ✅ 2번 메서드: 후보군 재정렬 (JSON 파싱 로직 포함)
+# 후보군 재정렬 (JSON 파싱 로직 포함)
 # ---------------------------------------------------------
 def re_rank_candidates(input_metadatas: List[dict], candidates: dict) -> List[str]:
     """

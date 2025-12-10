@@ -11,14 +11,14 @@ from rembg import remove
 from PIL import Image
 
 # ----------------------------
-# ✅ 환경 변수 및 설정
+# 환경 변수 및 설정
 # ----------------------------
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-S3_BUCKET = "feelem-s3-bucket"  # ✅ 본인 버킷명으로 변경
+S3_BUCKET = "feelem-s3-bucket"
 REGION_NAME = "ap-northeast-2"
 
 # ----------------------------
-# ✅ S3 클라이언트 초기화
+# S3 클라이언트 초기화
 # ----------------------------
 try:
     s3_client = boto3.client("s3", region_name=REGION_NAME)
@@ -27,7 +27,7 @@ except Exception as e:
     print(f"❌ S3 클라이언트 초기화 실패: {e}")
 
 # ----------------------------
-# ✅ 번역 모델 (Ko → En)
+# 번역 모델 (Ko → En)
 # ----------------------------
 print("🌀 Loading translation model...")
 translator_model = "Helsinki-NLP/opus-mt-ko-en"
@@ -42,7 +42,7 @@ def translate_korean_to_english(text: str) -> str:
 
 
 # ----------------------------
-# ✅ Stable Diffusion v1.5 파이프라인
+# Stable Diffusion v1.5 파이프라인
 # ----------------------------
 print("🧠 Loading Stable Diffusion v1.5 model... (first time only)")
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -51,12 +51,12 @@ pipe = StableDiffusionPipeline.from_pretrained(
     use_auth_token=HUGGINGFACE_TOKEN,
 ).to("cuda" if torch.cuda.is_available() else "cpu")
 
-# ✅ g4dn(T4 GPU) 환경 메모리 최적화
+# g4dn(T4 GPU) 환경 메모리 최적화
 pipe.enable_attention_slicing()
 pipe.enable_vae_slicing()
 
 # ----------------------------
-# ✅ FastAPI 서버 초기화
+# FastAPI 서버 초기화
 # ----------------------------
 app = FastAPI()
 
@@ -71,7 +71,7 @@ async def root():
 
 
 # ----------------------------
-# ✅ 이미지 생성 & 업로드
+# 이미지 생성 & 업로드
 # ----------------------------
 @app.post("/gensticker")
 async def generate_sticker(request: PromptRequest):
@@ -79,21 +79,21 @@ async def generate_sticker(request: PromptRequest):
         prompt_ko = request.prompt_ko
         print(f"🎨 프롬프트 수신: {prompt_ko}")
 
-        # 1️⃣ 번역
+        # 1️ 번역
         prompt_en = translate_korean_to_english(prompt_ko)
         print(f"🔤 영어 번역: {prompt_en}")
 
-        # 2️⃣ 이미지 생성
+        # 2️ 이미지 생성
         image = pipe(prompt_en).images[0]
 
-        # 3️⃣ 배경 제거
+        # 3️ 배경 제거
         image_no_bg = remove(image)
 
-        # 4️⃣ 임시 파일로 저장
+        # 4️ 임시 파일로 저장
         tmp_path = f"/tmp/{uuid.uuid4()}.png"
         image_no_bg.save(tmp_path, "PNG")
 
-        # 5️⃣ S3 업로드
+        # 5️ S3 업로드
         s3_key = f"stickers/{os.path.basename(tmp_path)}"
         s3_client.upload_file(
             tmp_path,
@@ -102,7 +102,7 @@ async def generate_sticker(request: PromptRequest):
             ExtraArgs={"ContentType": "image/png"},
         )
 
-        # 6️⃣ S3 URL 생성
+        # 6️ S3 URL 생성
         image_url = f"https://{S3_BUCKET}.s3.{REGION_NAME}.amazonaws.com/{s3_key}"
         print(f"✅ 업로드 완료: {image_url}")
 
