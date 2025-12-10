@@ -34,12 +34,13 @@ public class FilterResponse {
 
   private Long saveCount;
   private Long useCount;
+  private Long reviewCount;
 
   private String socialType;   // 대표 소셜 종류
   private String socialValue;  // 대표 소셜 ID 값
 
   public FilterResponse(Filter filter, Boolean isMine, Boolean isUsed, Boolean isBookmarked, List<String> tags,
-      List<FaceStickerResponse> stickers) {
+      List<FaceStickerResponse> stickers, Long reviewCount) {
     this.isMine = isMine;
     this.isUsed = isUsed;
     this.id = filter.getId();
@@ -57,6 +58,7 @@ public class FilterResponse {
     this.saveCount = filter.getSaveCount();
     this.useCount = filter.getUseCount();
     this.isBookmarked = isBookmarked;
+    this.reviewCount = reviewCount;
 
     // sns 아이디
     SocialType type = filter.getSocialType();

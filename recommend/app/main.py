@@ -22,6 +22,7 @@ async def recommend_home_filters(
     request_body: HomeRecommendRequest,
     request: Request,
     page: int = Query(0, ge=0),
+    size: int = Query(20, ge=1, le=500),
 ):
     """홈 화면 추천"""
     ids = await get_ranked_home_recs(request, request_body.filter_ids, page)

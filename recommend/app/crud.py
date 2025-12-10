@@ -32,7 +32,7 @@ else:
 # ✅ 홈 추천 (Re-Rank)
 # ----------------------------
 async def get_ranked_home_recs(
-    request: Request, filter_ids: List[str], page: int
+    request: Request, filter_ids: List[str], page: int, size: int = 20
 ) -> List[str]:
 
     # 🛑 1. ID가 없으면 DB 조회를 아예 시도하지 않음 (Cold Start 방어)
@@ -80,9 +80,8 @@ async def get_ranked_home_recs(
         print(f"❌ Error during home recommendation: {e}")
         return []  # 에러 발생 시에도 죽지 않게 빈 리스트 반환
 
-    # ✅ 홈 추천은 항상 고정된 페이지 사이즈(20) 사용
-    start = page * settings.PAGE_SIZE
-    end = start + settings.PAGE_SIZE
+    start = page * size
+    end = start + size
     return ranked_ids[start:end]
 
 

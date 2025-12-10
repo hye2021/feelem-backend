@@ -139,4 +139,6 @@ public interface FilterRepository extends JpaRepository<Filter, Long> {
           "WHERE f.creator.id = :creatorId " +
           "AND (ft.type = 'PURCHASE' OR f.price > 0)")
   Page<Filter> findSoldOrPaidFilters(@Param("creatorId") Long creatorId, Pageable pageable);
+
+  List<Filter> findByIdInAndIsDeletedFalse(List<Long> ids);
 }

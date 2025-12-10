@@ -19,6 +19,7 @@ import com.feelem.server.domain.filter.repository.TagRepository;
 import com.feelem.server.domain.finance.entity.FilterTransaction;
 import com.feelem.server.domain.finance.entity.FilterTransactionType;
 import com.feelem.server.domain.finance.repository.FilterTransactionRepository;
+import com.feelem.server.domain.review.repository.ReviewRepository;
 import com.feelem.server.domain.sticker.entity.FaceStickerPlacement;
 import com.feelem.server.domain.sticker.entity.Sticker;
 import com.feelem.server.domain.sticker.repository.FaceStickerPlacementRepository;
@@ -67,6 +68,7 @@ public class FilterService {
   private final PointRepository pointRepository;
   private final FaceStickerPlacementRepository faceStickerPlacementRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final ReviewRepository reviewRepository;
 
   // AI recommend 서버 연동을 위한 의존성
   private final FilterRecommendMapper aiMapper;
@@ -203,8 +205,10 @@ public class FilterService {
     boolean isUsed = filterTransactionRepository.existsByBuyerIdAndFilterId(currentUser.getId(), filterId);
     // 현재 사용자가 북마크한 필터인지 확인
     boolean isBookmarked = bookmarkRepository.existsByUserAndFilter(currentUser, filter);
+    // 리뷰 개수 가져오기
+    Long reviewCount  = reviewRepository.countByFilterId(filterId);
 
-    return new FilterResponse(filter, isMine, isUsed, isBookmarked, tags, stickers);
+    return new FilterResponse(filter, isMine, isUsed, isBookmarked, tags, stickers, reviewCount);
   }
 
   /**
@@ -266,7 +270,7 @@ public class FilterService {
       List<Filter> aiMatches = new ArrayList<>();
       if (!aiSearchIds.isEmpty()) {
         List<Long> ids = aiSearchIds.stream().map(Long::parseLong).toList();
-        List<Filter> foundFilters = filterRepository.findAllById(ids);
+        List<Filter> foundFilters = filterRepository.findByIdInAndIsDeletedFalse(ids);
         // AI가 추천해준 순서(유사도 순)대로 정렬
         aiMatches = sortByIdListOrder(foundFilters, aiSearchIds);
       }
@@ -338,13 +342,17 @@ public class FilterService {
 
   /**
    * 홈 화면 용 - 추천 필터 페이징 조회
+   * (수정사항: 요청 개수보다 넉넉하게 가져온 뒤, 삭제된 필터를 거르고 정확한 개수만큼 잘라서 반환)
    */
   @Transactional(readOnly = true)
   public List<FilterListResponse> getHomeRecommendations(Pageable pageable) {
     User user = userService.getCurrentUser();
     int page = pageable.getPageNumber();
 
-    // 1. 유저의 선호 필터 ID 조회
+    // 1. 클라이언트가 요청한 정확한 개수 (예: 200개)
+    int requestSize = pageable.getPageSize();
+
+    // 2. 유저의 선호 필터 ID 조회
     List<Long> recentIds = bookmarkRepository.findRecentBookmarkedFilterIds(
         user.getId(),
         PageRequest.of(0, 10)
@@ -354,40 +362,47 @@ public class FilterService {
         .map(String::valueOf)
         .collect(Collectors.toList());
 
-    // 🔍 [디버깅 로그 1] 우리가 AI에게 무엇을 보냈는가?
     log.info("🔍 [HomeRec] User ID: {}, 보낸 북마크 ID 목록: {}", user.getId(), likedFilterIds);
 
+    // [Cold Start] 북마크가 없으면 최신순 반환
     if (likedFilterIds.isEmpty()) {
       log.info("⚠️ [HomeRec] 유저의 최근 북마크 내역이 없음 (Cold Start) -> 즉시 Fallback");
       return getRecentFilters(pageable).getContent();
     }
 
-    // 2. AI 서버 요청
-    List<String> recommendedIds = aiClient.getHomeRecommendations(likedFilterIds, page);
+    // 3. [핵심] 버퍼 전략: 삭제된 필터(좀비 필터)가 걸러질 것을 대비해 1.2배수(20% 더) 요청
+    // (예: 200개 필요 -> 240개 요청)
+    int bufferSize = (int) (requestSize * 1.2);
+    // 혹시 모를 상황 대비 최소 버퍼 확보
+    if (bufferSize == requestSize) bufferSize += 5;
 
-    // 🔍 [디버깅 로그 2] AI가 무엇을 응답했는가?
+    // 4. AI 서버 요청 (bufferSize 만큼 달라고 요청)
+    // ⚠️ 주의: RecommendServingClient.getHomeRecommendations 메서드에도 int size 파라미터가 추가되어 있어야 합니다.
+    List<String> recommendedIds = aiClient.getHomeRecommendations(likedFilterIds, page, bufferSize);
+
     log.info("🤖 [HomeRec] AI 응답 ID 목록 (Size: {}): {}",
         (recommendedIds != null ? recommendedIds.size() : "NULL"),
         recommendedIds);
 
-    // 3. 결과가 없으면 최신순 Fallback
+    // 5. 결과가 없으면 최신순 Fallback
     if (recommendedIds == null || recommendedIds.isEmpty()) {
       log.info("⚠️ [HomeRec] AI 추천 결과가 비어있음 -> 최신순 Fallback 실행");
       return getRecentFilters(pageable).getContent();
     }
 
-    // 4. DB 조회
+    // 6. DB 조회 (삭제된 필터는 여기서 자동으로 제외됨)
+    // findByIdInAndIsDeletedFalse: 삭제되지 않은 필터만 가져옴
     List<Long> ids = recommendedIds.stream().map(Long::parseLong).toList();
-    List<Filter> filters = filterRepository.findAllById(ids);
+    List<Filter> filters = filterRepository.findByIdInAndIsDeletedFalse(ids);
 
-    // 🔍 [디버깅 로그 3] 실제 DB에서 찾은 개수는? (데이터 불일치 확인)
-    if (filters.size() != recommendedIds.size()) {
-      log.warn("⚠️ [HomeRec] 데이터 불일치 감지! AI 추천수: {}, DB 발견수: {}",
-          recommendedIds.size(), filters.size());
+    // [로그] 데이터 불일치 확인 (AI 추천수 vs DB 실제 존재수)
+    if (filters.size() < ids.size()) {
+      log.warn("🧟 좀비 필터 감지됨! (AI 추천: {}개 -> DB 유효: {}개)", ids.size(), filters.size());
     }
 
-    // 5. 정렬 및 DTO 변환
+    // 7. 정렬, DTO 변환 및 [핵심] 개수 맞추기 (Limit)
     return sortByIdListOrder(filters, recommendedIds).stream()
+        .limit(requestSize) // ✅ 유효한 필터 중에서 클라이언트가 요청한 개수(requestSize)만큼만 딱 잘라서 보냄
         .map(f -> toFilterListResponse(f, user))
         .collect(Collectors.toList());
   }

@@ -118,6 +118,7 @@ public class SalesService {
     );
 
     // 기간 내 총합 계산
+    //
     long totalPoints = transactions.stream().mapToLong(FilterTransaction::getAmount).sum();
     long totalCount = transactions.size();
 
@@ -166,10 +167,11 @@ public class SalesService {
     String pattern = (period == SalesPeriod.YEAR) ? "yyyy-MM" : "MM-dd";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
 
+    // 판매 금액이 아니라 판매 개수를 보내야 함
     Map<String, Long> groupedData = transactions.stream()
         .collect(Collectors.groupingBy(
             t -> t.getPurchasedAt().format(formatter),
-            Collectors.summingLong(FilterTransaction::getAmount)
+            Collectors.counting()
         ));
 
     // 2. 시작일부터 종료일까지 루프를 돌며 Map 채우기 (LinkedHashMap으로 순서 보장)

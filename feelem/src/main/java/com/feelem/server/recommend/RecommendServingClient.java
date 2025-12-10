@@ -45,24 +45,32 @@ public class RecommendServingClient {
 
   // 2. 삭제 요청
   public void deleteFilter(Long filterId) {
-    webClient.delete()
-        .uri("/admin/filter/" + filterId)
-        .retrieve()
-        .bodyToMono(Void.class)
-        .subscribe(
-            null,
-            error -> log.error("❌ AI Deletion Failed for FilterID: {}", filterId, error)
-        );
+    try {
+      webClient.delete()
+          .uri("/admin/filter/" + filterId)
+          .retrieve()
+          .bodyToMono(Void.class)
+          .block(); // 👈 [수정] 삭제가 완료될 때까지 기다립니다.
+
+      log.info("🗑️ AI Server Filter Deleted: {}", filterId);
+
+    } catch (WebClientResponseException e) {
+      log.error("❌ AI Deletion Failed (Status: {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+      // 삭제 실패는 비즈니스 로직(DB 삭제)을 롤백시킬 정도는 아니므로 예외를 던지지는 않음 (선택사항)
+    } catch (Exception e) {
+      log.error("❌ AI Deletion Connection Error: {}", e.getMessage());
+    }
   }
 
   // 3. 홈 추천 요청
-  public List<String> getHomeRecommendations(List<String> likedFilterIds, int page) {
+  public List<String> getHomeRecommendations(List<String> likedFilterIds, int page, int size) {
     Map<String, Object> body = Map.of("filter_ids", likedFilterIds);
 
     try {
       RecommendResponse response = webClient.post()
           .uri(uriBuilder -> uriBuilder.path("/recommend/home")
               .queryParam("page", page)
+              .queryParam("size", size) // 👈 여기 size가 추가되어야 합니다!
               .build())
           .bodyValue(body)
           .retrieve()

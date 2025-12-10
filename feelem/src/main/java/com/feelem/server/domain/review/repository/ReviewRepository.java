@@ -14,6 +14,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
   List<Review> findTop5ByFilterOrderByCreatedAtDesc(Filter filter);
 
+  Long countByFilterId(Long filterId);
+
   // User가 작성한 리뷰 최신순 조회
   @Query(value = "SELECT r FROM Review r " +
       "JOIN FETCH r.filter " +       // 필터 정보는 무조건 있으므로 JOIN FETCH
