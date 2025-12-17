@@ -31,6 +31,9 @@
         <action
             android:id="@+id/action_secondFragment_to_thirdFragment"
             app:destination="@id/thirdFragment" />
+        <action
+            android:id="@+id/action_secondFragment_to_firstFragment"
+            app:destination="@id/firstFragment" />
     </fragment>
     <fragment
         android:id="@+id/loading2Fragment"
@@ -52,15 +55,26 @@
         <action
             android:id="@+id/action_thirdFragment_to_loading2Fragment"
             app:destination="@id/loading2Fragment" />
+        <action
+            android:id="@+id/action_thirdFragment_to_firstFragment"
+            app:destination="@id/firstFragment" />
     </fragment>
     <fragment
         android:id="@+id/successFragment"
         android:name="com.feelem.printkiosk.SuccessFragment"
         android:label="fragment_success"
-        tools:layout="@layout/fragment_success" />
+        tools:layout="@layout/fragment_success" >
+        <action
+            android:id="@+id/action_successFragment_to_firstFragment"
+            app:destination="@id/firstFragment" />
+    </fragment>
     <fragment
         android:id="@+id/failFragment"
         android:name="com.feelem.printkiosk.FailFragment"
         android:label="fragment_fail"
-        tools:layout="@layout/fragment_fail" />
+        tools:layout="@layout/fragment_fail" >
+        <action
+            android:id="@+id/action_failFragment_to_firstFragment"
+            app:destination="@id/firstFragment" />
+    </fragment>
 </navigation>

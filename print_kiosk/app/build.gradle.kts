@@ -63,4 +63,6 @@ dependencies {
 
     // 로딩 애니메이션용 Lottie
     implementation("com.airbnb.android:lottie:6.1.0")
+
+    implementation("androidx.print:print:1.0.0")
 }
