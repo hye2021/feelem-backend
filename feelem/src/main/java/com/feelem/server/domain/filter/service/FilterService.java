@@ -30,6 +30,7 @@ import com.feelem.server.domain.user.entity.SocialType;
 import com.feelem.server.domain.user.entity.User;
 import com.feelem.server.domain.user.repository.PointRepository;
 import com.feelem.server.domain.user.service.UserService;
+import com.feelem.server.global.NotificationService;
 import com.feelem.server.recommend.FilterRecommendMapper;
 import com.feelem.server.recommend.RecommendServingClient;
 import jakarta.persistence.EntityNotFoundException;
@@ -69,6 +70,7 @@ public class FilterService {
   private final FaceStickerPlacementRepository faceStickerPlacementRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final ReviewRepository reviewRepository;
+  private final NotificationService notificationService;
 
   // AI recommend 서버 연동을 위한 의존성
   private final FilterRecommendMapper aiMapper;

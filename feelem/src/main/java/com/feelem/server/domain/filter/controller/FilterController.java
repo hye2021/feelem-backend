@@ -6,6 +6,8 @@ import com.feelem.server.domain.filter.dto.FilterListResponse;
 import com.feelem.server.domain.filter.dto.FilterResponse;
 import com.feelem.server.domain.filter.entity.Filter;
 import com.feelem.server.domain.filter.service.FilterService;
+import com.feelem.server.domain.upload.service.UploadService;
+import com.feelem.server.global.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,6 +18,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -24,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 public class FilterController {
 
   private final FilterService filterService;
+  private final NotificationService notificationService;
+  private final UploadService uploadService;
 
   // 기존 코드 유지 (필터 생성)
   @PostMapping
@@ -33,8 +38,39 @@ public class FilterController {
 
 //    log.info("✔️ 필터가 생성되었습니다: {}", response);
 
+    // 태블릿 앱에 프린트 요청 알림 전송
+    try {
+      var imageUrl = response.getEditedImageUrl();
+      notificationService.sendPrintNotification(imageUrl);
+    } catch (Exception e) {
+      log.error("⚠️ 태블릿 알림 발송 실패: {}", e.getMessage());
+    }
+
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
+  
+  // 전시용
+  // 현재 사진으로 s3 저장, 프린트
+  @PostMapping("/print")
+  public ResponseEntity<String> print(@RequestParam("file") MultipartFile file) {
+    String s3ImageUrl;
+    try {
+      s3ImageUrl = uploadService.uploadPrintImage(file);
+    } catch (Exception e) {
+      log.error("❌ S3 업로드 실패: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("S3 업로드 실패");
+    }
+
+    // 태블릿 앱에 프린트 요청 알림 전송
+    try {
+      notificationService.sendPrintNotification(s3ImageUrl);
+    } catch (Exception e) {
+      log.error("⚠️ 태블릿 알림 발송 실패: {}", e.getMessage());
+    }
+
+    return ResponseEntity.status(HttpStatus.OK).body(s3ImageUrl);
+  }
+
   // 기존 코드 유지 (필터 상세 조회)
   @GetMapping("/{filterId}")
   public ResponseEntity<FilterResponse> getFilter(@PathVariable Long filterId) {

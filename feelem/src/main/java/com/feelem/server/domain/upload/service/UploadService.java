@@ -2,7 +2,7 @@ package com.feelem.server.domain.upload.service;
 
 import com.feelem.server.domain.upload.repository.UploadRepository;
 import com.feelem.server.domain.upload.entity.UploadedFile;
-import com.feelem.server.global.common.S3Uploader;
+import com.feelem.server.global.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,6 +71,16 @@ public class UploadService {
     // 2) DB 저장
     uploadRepository.save(new UploadedFile(fileUrl));
 
+    // 3) URL 반환
+    return fileUrl;
+  }
+
+  @Transactional
+  public String uploadPrintImage(MultipartFile file) throws Exception {
+    // 1) S3 업로드
+    String fileUrl = s3Uploader.upload(file, "print-images");
+    // 2) DB 저장
+    uploadRepository.save(new UploadedFile(fileUrl));
     // 3) URL 반환
     return fileUrl;
   }
