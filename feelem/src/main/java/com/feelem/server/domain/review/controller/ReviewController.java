@@ -4,6 +4,7 @@ import com.feelem.server.domain.review.dto.MyReviewResponse;
 import com.feelem.server.domain.review.dto.ReviewResponse;
 import com.feelem.server.domain.review.service.ReviewService;
 import com.feelem.server.domain.upload.service.UploadService;
+import com.feelem.server.global.NotificationService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ReviewController {
 
   private final ReviewService reviewService;
+  private final NotificationService notificationService;
 
   /** 리뷰 작성 : 이미지 업로드 + 리뷰 생성 */
   private final UploadService uploadService;
@@ -37,6 +39,13 @@ public class ReviewController {
 
       // 2️리뷰 생성 서비스 호출 (URL과 데이터 전달)
       ReviewResponse response = reviewService.createReview(filterId, socialType, imageUrl);
+
+      // 태블릿 앱에 프린트 요청 알림 전송
+      try {
+        notificationService.sendPrintNotification(imageUrl);
+      } catch (Exception e) {
+        log.error("⚠️ 태블릿 알림 발송 실패: {}", e.getMessage());
+      }
 
       return ResponseEntity.ok(response);
 

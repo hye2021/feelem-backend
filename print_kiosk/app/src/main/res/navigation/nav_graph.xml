@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/firstFragment">
+
+    <fragment
+        android:id="@+id/firstFragment"
+        android:name="com.feelem.printkiosk.FirstFragment"
+        android:label="fragment_first"
+        tools:layout="@layout/fragment_first" >
+        <action
+            android:id="@+id/action_firstFragment_to_loading1Fragment"
+            app:destination="@id/loading1Fragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/loading1Fragment"
+        android:name="com.feelem.printkiosk.Loading1Fragment"
+        android:label="fragment_loading1"
+        tools:layout="@layout/fragment_loading1" >
+        <action
+            android:id="@+id/action_loading1Fragment_to_secondFragment"
+            app:destination="@id/secondFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/secondFragment"
+        android:name="com.feelem.printkiosk.SecondFragment"
+        android:label="fragment_second"
+        tools:layout="@layout/fragment_second" >
+        <action
+            android:id="@+id/action_secondFragment_to_thirdFragment"
+            app:destination="@id/thirdFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/loading2Fragment"
+        android:name="com.feelem.printkiosk.Loading2Fragment"
+        android:label="fragment_loading2"
+        tools:layout="@layout/fragment_loading2" >
+        <action
+            android:id="@+id/action_loading2Fragment_to_successFragment"
+            app:destination="@id/successFragment" />
+        <action
+            android:id="@+id/action_loading2Fragment_to_failFragment"
+            app:destination="@id/failFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/thirdFragment"
+        android:name="com.feelem.printkiosk.ThirdFragment"
+        android:label="fragment_third"
+        tools:layout="@layout/fragment_third" >
+        <action
+            android:id="@+id/action_thirdFragment_to_loading2Fragment"
+            app:destination="@id/loading2Fragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/successFragment"
+        android:name="com.feelem.printkiosk.SuccessFragment"
+        android:label="fragment_success"
+        tools:layout="@layout/fragment_success" />
+    <fragment
+        android:id="@+id/failFragment"
+        android:name="com.feelem.printkiosk.FailFragment"
+        android:label="fragment_fail"
+        tools:layout="@layout/fragment_fail" />
+</navigation>

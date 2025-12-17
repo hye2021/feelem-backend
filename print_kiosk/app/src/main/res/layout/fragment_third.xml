@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/iv_bg_third"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/iv_photo_preview"
+        android:layout_width="248dp"
+        android:layout_height="360dp"
+        android:layout_marginStart="156dp"
+        android:layout_marginTop="224dp"
+        android:background="#DDDDDD"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <ImageView
+        android:id="@+id/iv_frame_overlay"
+        android:layout_width="248dp"
+        android:layout_height="414dp"
+        android:layout_marginStart="156dp"
+        android:layout_marginTop="212dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitXY"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@drawable/frame_1" />
+
+    <ImageButton
+        android:id="@+id/btn_frame_pink"
+        android:layout_width="96dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="576dp"
+        android:layout_marginTop="288dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/sel_frame_btn_pink"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_frame_lime"
+        android:layout_width="96dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="724dp"
+        android:layout_marginTop="288dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/sel_frame_btn_lime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_frame_blue"
+        android:layout_width="96dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="868dp"
+        android:layout_marginTop="288dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/sel_frame_btn_blue"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_frame_black"
+        android:layout_width="96dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="1016dp"
+        android:layout_marginTop="288dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/sel_frame_btn_black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_cancel_print"
+        android:layout_width="179dp"
+        android:layout_height="104dp"
+        android:layout_marginStart="576dp"
+        android:layout_marginTop="524dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/exit_btn_3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_print"
+        android:layout_width="321dp"
+        android:layout_height="104dp"
+        android:layout_marginStart="784dp"
+        android:layout_marginTop="524dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/continue_btn_3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
