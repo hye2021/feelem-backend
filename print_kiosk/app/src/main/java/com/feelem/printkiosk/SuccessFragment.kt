@@ -1,59 +1,86 @@
 package com.feelem.printkiosk
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SuccessFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SuccessFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private var countDownTimer: CountDownTimer? = null
+    private lateinit var tvTimer: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_success, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SuccessFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SuccessFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        tvTimer = view.findViewById(R.id.tv_timer_success)
+        val btnHome = view.findViewById<ImageButton>(R.id.btn_return_home_success)
+
+        // 1. 하드웨어 뒤로가기 버튼 차단 (처음으로 이동)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateToHome()
             }
+        })
+
+        // 2. 홈으로 돌아가기 버튼 클릭 이벤트
+        btnHome.setOnClickListener {
+            navigateToHome()
+        }
+
+        // 3. 10초 자동 종료 타이머 시작
+        startExitTimer(10000) // 10초
+    }
+
+    private fun startExitTimer(millis: Long) {
+        countDownTimer = object : CountDownTimer(millis, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                // 초 단위로 텍스트 업데이트
+                val seconds = millisUntilFinished / 1000
+                tvTimer.text = seconds.toString()
+            }
+
+            override fun onFinish() {
+                // 시간이 다 되면 자동으로 홈으로 이동
+                navigateToHome()
+            }
+        }.start()
+    }
+
+    private fun navigateToHome() {
+        stopTimer()
+        if (isAdded) {
+            // 모든 백스택을 비우고 FirstFragment로 이동하는 것이 가장 안전합니다.
+            findNavController().navigate(R.id.action_successFragment_to_firstFragment)
+        }
+    }
+
+    private fun stopTimer() {
+        countDownTimer?.cancel()
+        countDownTimer = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 인쇄 서비스에서 돌아왔을 때 다시 내비게이션 바 숨기기
+        (activity as? MainActivity)?.hideSystemUI()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        stopTimer() // 프래그먼트가 파괴될 때 타이머도 확실히 종료
     }
 }

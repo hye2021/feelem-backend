@@ -3,9 +3,6 @@ package com.feelem.printkiosk
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.print.PrintAttributes
-import android.print.PrintDocumentAdapter
-import android.print.PrintDocumentInfo
 import android.print.PrintJob
 import android.print.PrintManager
 import android.view.LayoutInflater
@@ -14,83 +11,132 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.print.PrintHelper
+import com.airbnb.lottie.LottieAnimationView
 import kotlinx.coroutines.*
 
 class Loading2Fragment : Fragment() {
 
-    private var printJob: PrintJob? = null
     private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private lateinit var lottieLoading: LottieAnimationView
+    private val PRINT_JOB_NAME = "Feel-em_Card_Print"
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         return inflater.inflate(R.layout.fragment_loading2, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        lottieLoading = view.findViewById(R.id.lottie_loading2)
+
         val bitmap = arguments?.getParcelable<Bitmap>("printBitmap")
         if (bitmap != null) {
             doPrint(bitmap)
+        } else {
+            // 비트맵이 없으면 처음으로
+            findNavController().navigate(R.id.action_loading2Fragment_to_firstFragment)
         }
     }
 
     private fun doPrint(bitmap: Bitmap) {
-        // 1. PrintHelper 설정
         val printHelper = PrintHelper(requireContext()).apply {
-            // SCALE_MODE_FIT: 이미 구워진 이미지를 용지 안에 딱 맞춰 넣습니다.
             scaleMode = PrintHelper.SCALE_MODE_FIT
-            // 세로 출력 강제
             orientation = PrintHelper.ORIENTATION_PORTRAIT
         }
 
-        // 2. 작업 이름 설정
-        val jobName = "Feel-em_Card_Print"
-
-        // 3. 인쇄 실행
-        // 이미지가 이미 638x1016으로 구워졌으므로 시스템은 이를 카드 사이즈로 인식하기 훨씬 수월해집니다.
-        printHelper.printBitmap(jobName, bitmap) {
-            // 인쇄 다이얼로그가 닫히면 성공 화면으로 이동
-            if (isAdded) {
-                findNavController().navigate(R.id.action_loading2Fragment_to_successFragment)
-            }
+        // 인쇄 실행
+        printHelper.printBitmap(PRINT_JOB_NAME, bitmap) {
+            android.util.Log.d("PrintLog", "인쇄 다이얼로그 상호작용 끝")
         }
+
+        // 상태 감시 시작
+        checkPrintStatus()
     }
 
     private fun checkPrintStatus() {
         val printManager = requireContext().getSystemService(Context.PRINT_SERVICE) as PrintManager
 
         scope.launch {
-            while (isActive) {
-                // 현재 앱에서 보낸 가장 최근 인쇄 작업을 찾음
+            // [중요] 사용자가 '인쇄'를 누를 때까지 충분히 기다림 (다이얼로그 열려있는 시간 고려)
+            delay(3000)
+
+            var targetJobId: android.print.PrintJobId? = null
+            var watchTime = 0
+            val maxWatchTime = 90000 // 1분 30초 -> 강제 성공 처리
+
+            while (isActive && watchTime < maxWatchTime) {
                 val jobs = printManager.printJobs
-                val currentJob = jobs.find { it.info.label == "Feel-em-Print-Job" }
+
+                // 1. 타겟 작업 찾기 (이름으로 찾기)
+                val currentJob = jobs.find { it.info.label == PRINT_JOB_NAME }
 
                 if (currentJob != null) {
+                    targetJobId = currentJob.id // ID 저장
+
                     when {
                         currentJob.isCompleted -> {
-                            findNavController().navigate(R.id.action_loading2Fragment_to_successFragment)
-                            cancel() // 코루틴 종료
+                            android.util.Log.d("PrintStatus", "완료 상태 감지")
+                            delay(1000)
+                            navigateToSuccess()
+                            return@launch
                         }
                         currentJob.isFailed -> {
-                            val bundle = Bundle().apply { putString("reason", "프린터 연결을 확인해주세요.") }
-                            findNavController().navigate(R.id.action_loading2Fragment_to_failFragment, bundle)
-                            cancel()
+                            navigateToFail("인쇄 실패")
+                            return@launch
                         }
                         currentJob.isCancelled -> {
-                            val bundle = Bundle().apply { putString("reason", "프린트 작업이 중단되었습니다.") }
-
-                            findNavController().navigate(R.id.action_loading2Fragment_to_failFragment)
-                            cancel()
+                            navigateToFirst()
+                            return@launch
                         }
                     }
+                } else {
+                    // 2. 작업이 리스트에 없는데 ID를 한 번이라도 잡았었다면 -> 전송 완료되어 리스트에서 나간 것
+                    if (targetJobId != null) {
+                        android.util.Log.d("PrintStatus", "작업이 리스트에서 사라짐 -> 전송 완료로 간주")
+                        delay(2000)
+                        navigateToSuccess()
+                        return@launch
+                    }
                 }
-                delay(1000) // 1초 간격으로 상태 체크
+
+                delay(1500)
+                watchTime += 1500
+                android.util.Log.d("PrintStatus", "감시 중... (${watchTime/1000}초)")
             }
+
+            // 3. 타임아웃 (30초가 지났는데도 상태가 안 변하면 강제로 성공 처리)
+            android.util.Log.d("PrintStatus", "타임아웃 발생 -> 강제 화면 전환")
+            navigateToSuccess()
         }
+    }
+
+    private fun navigateToSuccess() {
+        if (isAdded) {
+            findNavController().navigate(R.id.action_loading2Fragment_to_successFragment)
+        }
+        scope.cancel()
+    }
+
+    private fun navigateToFail(reason: String) {
+        if (isAdded) {
+            val bundle = Bundle().apply { putString("reason", reason) }
+            findNavController().navigate(R.id.action_loading2Fragment_to_failFragment, bundle)
+        }
+        scope.cancel()
+    }
+
+    private fun navigateToFirst() {
+        if (isAdded) {
+            findNavController().navigate(R.id.action_loading2Fragment_to_firstFragment)
+        }
+        scope.cancel()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        scope.cancel() // 프래그먼트 파괴 시 작업 중단
+        scope.cancel()
     }
 }

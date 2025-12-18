@@ -16,16 +16,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <ProgressBar
-        android:id="@+id/pb_loading1"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:indeterminate="true"
-        android:indeterminateTint="#FFFFFF"
-        style="?android:attr/progressBarStyleLarge"
-        app:layout_constraintTop_toTopOf="parent"
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottie_loading1"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.394"
+        app:lottie_autoPlay="true"
+        app:lottie_fileName="loading_diamond.json"
+        app:lottie_loop="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

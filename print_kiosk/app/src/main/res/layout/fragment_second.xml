@@ -58,12 +58,12 @@
         android:id="@+id/iv_user_photo"
         android:layout_width="210dp"
         android:layout_height="322dp"
-        android:background="#EEEEEE"
-        android:scaleType="centerCrop"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         android:layout_marginStart="143dp"
         android:layout_marginTop="224dp"
+        android:background="#FFFFFF"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:srcCompat="@tools:sample/avatars" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
