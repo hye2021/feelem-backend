@@ -60,18 +60,18 @@
         android:id="@+id/ll_frame_btns"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="250dp"
         android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="@id/gl_v_buttons"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="250dp">
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btn_frame_lime"
             android:layout_width="96dp"
             android:layout_height="160dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/sel_frame_btn_lime"
-            android:scaleType="fitCenter" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/sel_frame_btn_lime" />
 
         <ImageButton
             android:id="@+id/btn_frame_pink"

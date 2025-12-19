@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.print.PrintJob
 import android.print.PrintManager
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,83 +33,90 @@ class Loading2Fragment : Fragment() {
 
         lottieLoading = view.findViewById(R.id.lottie_loading2)
 
+        // 전달받은 비트맵 확인
         val bitmap = arguments?.getParcelable<Bitmap>("printBitmap")
         if (bitmap != null) {
             doPrint(bitmap)
         } else {
-            // 비트맵이 없으면 처음으로
-            findNavController().navigate(R.id.action_loading2Fragment_to_firstFragment)
+            Log.e("PrintLog", "전달된 비트맵이 없음")
+            navigateToFirst()
         }
     }
 
     private fun doPrint(bitmap: Bitmap) {
-        val printHelper = PrintHelper(requireContext()).apply {
+        val context = context ?: return
+        val printHelper = PrintHelper(context).apply {
             scaleMode = PrintHelper.SCALE_MODE_FIT
             orientation = PrintHelper.ORIENTATION_PORTRAIT
         }
 
-        // 인쇄 실행
-        printHelper.printBitmap(PRINT_JOB_NAME, bitmap) {
-            android.util.Log.d("PrintLog", "인쇄 다이얼로그 상호작용 끝")
-        }
+        // 인쇄 실행 (시스템 다이얼로그 호출)
+        printHelper.printBitmap(PRINT_JOB_NAME, bitmap)
 
-        // 상태 감시 시작
+        // 상태 감시 및 타임아웃 로직 시작
         checkPrintStatus()
     }
 
     private fun checkPrintStatus() {
-        val printManager = requireContext().getSystemService(Context.PRINT_SERVICE) as PrintManager
+        val appContext = context?.applicationContext ?: return
+        val printManager = appContext.getSystemService(Context.PRINT_SERVICE) as PrintManager
 
         scope.launch {
-            // [중요] 사용자가 '인쇄'를 누를 때까지 충분히 기다림 (다이얼로그 열려있는 시간 고려)
-            delay(3000)
+            delay(10000) // 사용자가 인쇄 버튼을 누를 때까지 기다림
 
-            var targetJobId: android.print.PrintJobId? = null
             var watchTime = 0
-            val maxWatchTime = 90000 // 1분 30초 -> 강제 성공 처리
+            val timeoutLimit = 40000
+            var targetJobFound = false // 인쇄 작업이 한 번이라도 생성되었는지 확인하는 플래그
 
-            while (isActive && watchTime < maxWatchTime) {
+            while (isActive && watchTime < timeoutLimit) {
                 val jobs = printManager.printJobs
-
-                // 1. 타겟 작업 찾기 (이름으로 찾기)
                 val currentJob = jobs.find { it.info.label == PRINT_JOB_NAME }
 
                 if (currentJob != null) {
-                    targetJobId = currentJob.id // ID 저장
+                    // 작업을 찾음! 이제부터는 '전송 중' 상태로 간주
+                    targetJobFound = true
+
+                    val state = currentJob.info.state
+                    Log.d("PrintStatus", "현재 상태 코드: $state")
 
                     when {
                         currentJob.isCompleted -> {
-                            android.util.Log.d("PrintStatus", "완료 상태 감지")
-                            delay(1000)
+                            Log.d("PrintStatus", "인쇄 완료 감지")
                             navigateToSuccess()
                             return@launch
                         }
                         currentJob.isFailed -> {
-                            navigateToFail("인쇄 실패")
-                            return@launch
-                        }
-                        currentJob.isCancelled -> {
-                            navigateToFirst()
+                            Log.e("PrintStatus", "인쇄 실패 감지 - 성공 화면으로 우회")
+                            navigateToSuccess()
                             return@launch
                         }
                     }
                 } else {
-                    // 2. 작업이 리스트에 없는데 ID를 한 번이라도 잡았었다면 -> 전송 완료되어 리스트에서 나간 것
-                    if (targetJobId != null) {
-                        android.util.Log.d("PrintStatus", "작업이 리스트에서 사라짐 -> 전송 완료로 간주")
-                        delay(2000)
+                    // 작업이 리스트에 없는 경우
+                    if (targetJobFound) {
+                        // 1. 작업을 찾았었는데 사라졌다면 -> 인쇄 전송 성공!
+                        Log.d("PrintStatus", "작업 완료로 인한 리스트 소멸 -> 성공 처리")
                         navigateToSuccess()
                         return@launch
+                    } else {
+                        // 2. 처음부터 작업이 없었고, 일정 시간(25초)이 지났다면 -> 사용자 취소로 간주
+                        if (watchTime > 25000) {
+                            Log.d("PrintStatus", "작업이 생성되지 않음 (사용자 취소 가능성) -> 홈으로")
+                            navigateToFirst() // 또는 navigateToFail()
+                            return@launch
+                        }
                     }
                 }
 
-                delay(1500)
-                watchTime += 1500
-                android.util.Log.d("PrintStatus", "감시 중... (${watchTime/1000}초)")
+                delay(2000)
+                watchTime += 2000
+                Log.d("PrintStatus", "감시 중... (${watchTime / 1000}초)")
             }
 
-            // 3. 타임아웃 (30초가 지났는데도 상태가 안 변하면 강제로 성공 처리)
-            android.util.Log.d("PrintStatus", "타임아웃 발생 -> 강제 화면 전환")
+            // --- 타임아웃 발생 (무한 로딩 등) ---
+            Log.e("PrintStatus", "타임아웃 발생! 시스템 큐 강제 정리")
+            printManager.printJobs.find { it.info.label == PRINT_JOB_NAME }?.cancel()
+
             navigateToSuccess()
         }
     }
@@ -116,14 +124,6 @@ class Loading2Fragment : Fragment() {
     private fun navigateToSuccess() {
         if (isAdded) {
             findNavController().navigate(R.id.action_loading2Fragment_to_successFragment)
-        }
-        scope.cancel()
-    }
-
-    private fun navigateToFail(reason: String) {
-        if (isAdded) {
-            val bundle = Bundle().apply { putString("reason", reason) }
-            findNavController().navigate(R.id.action_loading2Fragment_to_failFragment, bundle)
         }
         scope.cancel()
     }
@@ -137,6 +137,7 @@ class Loading2Fragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // 프래그먼트 파괴 시 코루틴 정리 (메모리 누수 방지)
         scope.cancel()
     }
 }
