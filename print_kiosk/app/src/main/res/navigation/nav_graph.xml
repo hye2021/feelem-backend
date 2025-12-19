@@ -47,9 +47,6 @@
             android:id="@+id/action_loading2Fragment_to_successFragment"
             app:destination="@id/successFragment" />
         <action
-            android:id="@+id/action_loading2Fragment_to_failFragment"
-            app:destination="@id/failFragment" />
-        <action
             android:id="@+id/action_loading2Fragment_to_firstFragment"
             app:destination="@id/firstFragment" />
     </fragment>
@@ -81,9 +78,5 @@
         android:id="@+id/failFragment"
         android:name="com.feelem.printkiosk.FailFragment"
         android:label="fragment_fail"
-        tools:layout="@layout/fragment_fail" >
-        <action
-            android:id="@+id/action_failFragment_to_firstFragment"
-            app:destination="@id/firstFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_fail" />
 </navigation>
