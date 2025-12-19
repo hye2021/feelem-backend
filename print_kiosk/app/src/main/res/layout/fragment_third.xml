@@ -15,113 +15,127 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_v_photo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.09" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_v_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.45" />
+
     <ImageView
         android:id="@+id/iv_photo_preview"
-        android:layout_width="248dp"
-        android:layout_height="374dp"
-        android:layout_marginStart="156dp"
-        android:layout_marginTop="216dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:background="#FFFFFF"
+        android:adjustViewBounds="true"
         android:scaleType="fitCenter"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.25"
+        app:layout_constraintStart_toStartOf="@id/gl_v_photo"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.5"
         tools:srcCompat="@tools:sample/avatars" />
 
     <ImageView
         android:id="@+id/iv_frame_overlay"
-        android:layout_width="248dp"
-        android:layout_height="414dp"
-        android:layout_marginStart="156dp"
-        android:layout_marginTop="212dp"
-        android:background="@android:color/transparent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:scaleType="fitXY"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="-25dp"
+        android:layout_marginBottom="-50dp"
+        app:layout_constraintTop_toTopOf="@id/iv_photo_preview"
+        app:layout_constraintBottom_toBottomOf="@id/iv_photo_preview"
+        app:layout_constraintStart_toStartOf="@id/iv_photo_preview"
+        app:layout_constraintEnd_toEndOf="@id/iv_photo_preview"
         tools:srcCompat="@drawable/frame_1" />
 
-    <ImageButton
-        android:id="@+id/btn_frame_pink"
-        android:layout_width="96dp"
-        android:layout_height="160dp"
-        android:layout_marginStart="724dp"
-        android:layout_marginTop="288dp"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/sel_frame_btn_pink"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:id="@+id/ll_frame_btns"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="@id/gl_v_buttons"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="250dp">
 
-    <ImageButton
-        android:id="@+id/btn_frame_lime"
-        android:layout_width="96dp"
-        android:layout_height="160dp"
-        android:layout_marginStart="576dp"
-        android:layout_marginTop="288dp"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/sel_frame_btn_lime"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <ImageButton
+            android:id="@+id/btn_frame_lime"
+            android:layout_width="96dp"
+            android:layout_height="160dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/sel_frame_btn_lime"
+            android:scaleType="fitCenter" />
 
-    <ImageButton
-        android:id="@+id/btn_frame_blue"
-        android:layout_width="96dp"
-        android:layout_height="160dp"
-        android:layout_marginStart="868dp"
-        android:layout_marginTop="288dp"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/sel_frame_btn_blue"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <ImageButton
+            android:id="@+id/btn_frame_pink"
+            android:layout_width="96dp"
+            android:layout_height="160dp"
+            android:layout_marginStart="40dp"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/sel_frame_btn_pink" />
 
-    <ImageButton
-        android:id="@+id/btn_frame_black"
-        android:layout_width="96dp"
-        android:layout_height="160dp"
-        android:layout_marginStart="1016dp"
-        android:layout_marginTop="288dp"
-        android:background="@android:color/transparent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/sel_frame_btn_black"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <ImageButton
+            android:id="@+id/btn_frame_blue"
+            android:layout_width="96dp"
+            android:layout_height="160dp"
+            android:layout_marginStart="40dp"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/sel_frame_btn_blue" />
+
+        <ImageButton
+            android:id="@+id/btn_frame_black"
+            android:layout_width="96dp"
+            android:layout_height="160dp"
+            android:layout_marginStart="40dp"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/sel_frame_btn_black" />
+
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/btn_cancel_print"
         android:layout_width="179dp"
         android:layout_height="104dp"
-        android:layout_marginStart="576dp"
-        android:layout_marginTop="568dp"
+        android:layout_marginTop="30dp"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/exit_btn_3"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="@id/gl_v_buttons"
+        app:layout_constraintTop_toBottomOf="@id/ll_frame_btns" />
 
     <ImageButton
         android:id="@+id/btn_print"
         android:layout_width="321dp"
         android:layout_height="104dp"
-        android:layout_marginStart="788dp"
-        android:layout_marginTop="568dp"
+        android:layout_marginStart="10dp"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/continue_btn_3"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/btn_cancel_print"
+        app:layout_constraintTop_toTopOf="@id/btn_cancel_print" />
 
     <TextView
         android:id="@+id/tv_timer_third"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="820dp"
-        android:layout_marginTop="492dp"
+        android:layout_marginTop="32dp"
         android:text="60"
         android:textColor="#FFFFFF"
         android:textSize="40sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="@id/btn_print"
+        app:layout_constraintHorizontal_bias="0.203"
+        app:layout_constraintStart_toStartOf="@id/btn_print"
+        app:layout_constraintTop_toBottomOf="@id/btn_print" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

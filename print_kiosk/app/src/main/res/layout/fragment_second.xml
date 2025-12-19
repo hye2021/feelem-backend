@@ -17,53 +17,72 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_vertical_30"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.09" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_vertical_70"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.41" />
+
+    <ImageView
+        android:id="@+id/iv_user_photo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        app:layout_constraintWidth_percent="0.25"
+        app:layout_constraintStart_toStartOf="@id/gl_vertical_30"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.5"
+        tools:srcCompat="@tools:sample/avatars" />
+
     <ImageButton
         android:id="@+id/btn_make_card"
-        android:layout_width="612dp"
-        android:layout_height="108dp"
-        android:layout_marginStart="524dp"
-        android:layout_marginTop="296dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="268dp"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/sel_btn_continue_2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintDimensionRatio="612:108"
+        app:layout_constraintStart_toStartOf="@id/gl_vertical_70"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.45" />
 
     <ImageButton
         android:id="@+id/btn_return_home"
-        android:layout_width="612dp"
-        android:layout_height="108dp"
-        android:layout_marginStart="524dp"
-        android:layout_marginTop="436dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/sel_btn_exit_2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintDimensionRatio="612:108"
+        app:layout_constraintStart_toStartOf="@id/gl_vertical_70"
+        app:layout_constraintTop_toBottomOf="@id/btn_make_card"
+        app:layout_constraintWidth_percent="0.45" />
 
     <TextView
         android:id="@+id/tv_timer_number"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="44dp"
         android:text="60"
         android:textColor="#FFFFFF"
         android:textSize="40sp"
         android:textStyle="bold"
-        android:layout_marginStart="765dp"
-        android:layout_marginTop="574dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/iv_user_photo"
-        android:layout_width="210dp"
-        android:layout_height="322dp"
-        android:layout_marginStart="143dp"
-        android:layout_marginTop="224dp"
-        android:background="#FFFFFF"
-        android:scaleType="fitCenter"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/avatars" />
+        app:layout_constraintEnd_toEndOf="@id/btn_return_home"
+        app:layout_constraintHorizontal_bias="0.43"
+        app:layout_constraintStart_toStartOf="@id/btn_return_home"
+        app:layout_constraintTop_toBottomOf="@id/btn_return_home" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
