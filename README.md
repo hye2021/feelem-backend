@@ -9,4 +9,4 @@
 
 ---
 
-<img width="1920" height="19865" alt="PPT_Feel&#39;em_컨텐츠" src="https://github.com/user-attachments/assets/bc71a9b1-c0e4-40ab-81ba-20b9284b0017" />
+![PPT_Feel'em_컨텐츠](https://github.com/user-attachments/assets/bc71a9b1-c0e4-40ab-81ba-20b9284b0017)
