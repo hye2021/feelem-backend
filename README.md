@@ -6,7 +6,7 @@
 - [🏫 서울여대 디미과 제8회 졸업전시 - 온라인](https://www.swudm2025.com/)  
 - [👩‍🏫 2025 한국멀티미디어학과 추계학술발표대회 - 프로시딩 논문](https://drive.google.com/file/d/1Ohs-wzuWUS78uXImiMXWM9wAyw22mxze/view?usp=sharing)
 - [🖥️ 2025 한국멀티미디어학과 추계학술발표대회 - 발표 영상](https://www.youtube.com/watch?v=jx3LRyde5Vw)  
-- [🪪 소프트웨어 저작권 등록증](https://drive.google.com/file/d/1zFLwdqmfNF51Ot7U30i72ee1zeChTvkL/view?usp=sharing)  
+- [🪪 소프트웨어 저작권 등록증](https://drive.google.com/file/d/17UMS44DpaiwyKOLJ0fnWElLxzR6ngVse/view?usp=sharing)  
 
 ---
 
